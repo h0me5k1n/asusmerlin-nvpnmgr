@@ -1,0 +1,8 @@
+# addon name
+MY_ADDON_NAME=nordvpnmanager
+# control script
+MY_ADDON_SCRIPT=nordvpnmanager.sh
+# addon page
+MY_ADDON_PAGE=NordVPNManager.asp
+# tab name
+MY_ADDON_TAB="NordVPN Manager"
