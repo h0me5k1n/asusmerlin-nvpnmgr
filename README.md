@@ -1,2 +1,2 @@
 # asusmerlin-nvpnmgr
-Automatically update to recommended NordVPN server on Asus Merlin router firmware
+Automatically update client connection to recommended NordVPN server on Asus Merlin router firmware
