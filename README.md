@@ -5,7 +5,9 @@ Automatically update client connection to recommended NordVPN server on Asus Mer
 
 a NordVPN account is required to establish a connection.
 
-an existing VPN connection with the string "nordvpn" needs to exist in on of the 5 VPN client configurations. Configure this initially using the information from NordVPN about configuring the connection.
+an Asus router running v384.15 or later of the Merlin firmware.
+
+a VPN connection with the string "nordvpn" needs to exist in on of the 5 VPN client configurations on the router. Configure this initially using the information from NordVPN about configuring the connection.
 
 ## Usage (CLI)
 
