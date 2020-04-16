@@ -1,5 +1,5 @@
 # asusmerlin-nvpnmgr
-Automatically update client connection to recommended NordVPN server on Asus Merlin router firmware
+Automatically update client connection to recommended NordVPN server on Asus Merlin router firmware. Tested on RT-AC68U running v384.16 from https://www.asuswrt-merlin.net/download
 
 ## Pre Requisites
 
