@@ -3,20 +3,11 @@
 # USAGE
 #
 # to manually trigger an update
-# scriptname nordvpnmanager update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
+# scriptname update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
 # to schedule updates using cron/cru
-# scriptname nordvpnmanager schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
+# scriptname schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
 # to cancel schedule updates using cron/cru
-# scriptname nordvpnmanager cancel [1|2|3|4|5] 
-
-# variables
-EVENT=$1
-TYPE=$2
-VPN_NO=$3
-VPNPROT=$4
-
-VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
-VPNPROT_SHORT=${VPNPROT/*_/}
+# scriptname cancel [1|2|3|4|5] 
 
 # Absolute path to this script, e.g. /home/user/bin/foo.sh
 SCRIPT=$(readlink -f "$0")
@@ -26,6 +17,15 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 source /usr/sbin/helper.sh
 source "$SCRIPTPATH/addon_vars"
 JSONSCRIPT="$SCRIPTPATH/JSON.sh"
+
+# variables
+EVENT=$MY_ADDON_NAME
+TYPE=$1
+VPN_NO=$2
+VPNPROT=$3
+
+VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
+VPNPROT_SHORT=${VPNPROT/*_/}
 
 # check processing is for this addon
 # stop processing if event unmatched
@@ -159,16 +159,6 @@ setVPN(){
  EXISTING_IP=$(getServerIP)
  CONNECTSTATE=$(getConnectState)
  
- echo "$vJSON"
- echo "$OVPN_IP"
- echo "$OVPN_HOSTNAME"
- echo "$OVPNFILE"
- echo "$OVPN_DETAIL"
- echo "$CLIENT_CA"
- echo "$CRT_CLIENT_STATIC"
- echo "$EXISTING_IP"
- echo "$CONNECTSTATE"
- 
  SCRIPTSECTION=setVPN
  [ -z "$OVPN_IP" -o -z "$OVPN_HOSTNAME" -o -z "$VPN_NO" ] && errorcheck
  [ -z "$CLIENT_CA" -o -z "$CRT_CLIENT_STATIC" ] && errorcheck
@@ -176,6 +166,7 @@ setVPN(){
  # check that new VPN server IP is different
  if [ "$OVPN_IP" != "$EXISTING_IP" ]
  then
+  echo "updating VPN Client connection $VPN_NO to $OVPN_HOSTNAME"
   nvram set vpn_client${VPN_NO}_addr=${OVPN_IP} || errorcheck
   nvram set vpn_client${VPN_NO}_desc=${OVPN_HOSTNAME} || errorcheck
   echo "$CLIENT_CA" > /jffs/openvpn/vpn_crt_client${VPN_NO}_ca
@@ -188,6 +179,8 @@ setVPN(){
    sleep 3
    service start_vpnclient${VPN_NO}
   fi
+ else
+  echo "recommended server for VPN Client connection $VPN_NO is already the recommended server - $OVPN_HOSTNAME"
  fi
  SCRIPTSECTION=
 }
@@ -249,8 +242,9 @@ delCRONentry(){
  SCRIPTSECTION=
 }
 
-#
-#
+# ----------------
+# ----------------
+# ----------------
 
 # logic processing
 if [ "$TYPE" = "update" ]
@@ -258,7 +252,7 @@ then
  checkConnName
  logger -t "$MY_ADDON_NAME addon" "Updating to recommended NORDVPN server (VPNClient$VPN_NO)..."
  setVPN
- logger -t "$MY_ADDON_NAME addon" "Update complete (VPNClient$VPN_NO)"
+ logger -t "$MY_ADDON_NAME addon" "Update complete (VPNClient$VPN_NO - server $OVPN_HOSTNAME)"
 fi
 
 if [ "$TYPE" = "schedule" ]

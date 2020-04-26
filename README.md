@@ -29,7 +29,7 @@ where [day numbers] is noted, this refers to the days when an update will take p
 ### Manual Server Update
 to manually trigger an update
 ```
-nordvpnmanager.sh update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
+./nordvpnmanager.sh update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
 ```
 if a connection is currently running, it will update and reconnect to the recommended server.
 
@@ -38,7 +38,7 @@ This is currently fixed to use the "openvpn_udp" VPN profiles. Future version ma
 ### Configure a Scheduled Server Update
 to schedule updates using cron/cru
 ```
-nordvpnmanager.sh schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
+./nordvpnmanager.sh schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
 ```
 This will not affect any existing connections until the scheduled time is reached and the VPN is connected
 
@@ -47,7 +47,7 @@ This is currently fixed to use the "openvpn_udp" VPN profiles. Future version ma
 ### Cancel Scheduled Server Update
 to cancel scheduled updates configured in cron/cru
 ```
-nordvpnmanager.sh cancel [1|2|3|4|5] 
+./nordvpnmanager.sh cancel [1|2|3|4|5] 
 ```
 This will not affect any existing connections
 
