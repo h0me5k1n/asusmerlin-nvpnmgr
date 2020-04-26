@@ -6,3 +6,13 @@ MY_ADDON_SCRIPT=nordvpnmanager.sh
 MY_ADDON_PAGE=NordVPNManager.asp
 # tab name
 MY_ADDON_TAB="NordVPN Manager"
+# Github repo name
+GIT_REPO="asusmerlin-nvpnmgr"
+# Github repo branch - modify to pull different branch 
+# (fetch will overwrite local changes)
+GIT_REPO_BRANCH=master
+# Github dir
+GITHUB_DIR="https://raw.githubusercontent.com/h0me5k1n/$GIT_REPO/$GIT_REPO_BRANCH"
+# Local repo dir
+LOCAL_REPO="/jffs/scripts/$MY_ADDON_NAME"
+
