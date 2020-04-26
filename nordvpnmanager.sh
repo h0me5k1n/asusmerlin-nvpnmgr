@@ -9,15 +9,13 @@
 # to cancel schedule updates using cron/cru
 # scriptname nordvpnmanager cancel [1|2|3|4|5] 
 
-
 # variables
 EVENT=$1
 TYPE=$2
 VPN_NO=$3
 VPNPROT=$4
-VPN_NO=1
 
-VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp
+VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
 VPNPROT_SHORT=${VPNPROT/*_/}
 
 # Absolute path to this script, e.g. /home/user/bin/foo.sh
