@@ -159,13 +159,16 @@ setVPN(){
  EXISTING_IP=$(getServerIP)
  CONNECTSTATE=$(getConnectState)
  
- SCRIPTSECTION=setVPN
+ SCRIPTSECTION=setVPN1
  [ -z "$OVPN_IP" -o -z "$OVPN_HOSTNAME" -o -z "$VPN_NO" ] && errorcheck
+ SCRIPTSECTION=setVPN2
  [ -z "$CLIENT_CA" -o -z "$CRT_CLIENT_STATIC" ] && errorcheck
+ SCRIPTSECTION=setVPN3
  [ -z "$CONNECTSTATE" ] && errorcheck
  # check that new VPN server IP is different
  if [ "$OVPN_IP" != "$EXISTING_IP" ]
  then
+  SCRIPTSECTION=setVPN4
   echo "updating VPN Client connection $VPN_NO to $OVPN_HOSTNAME"
   nvram set vpn_client${VPN_NO}_addr=${OVPN_IP} || errorcheck
   nvram set vpn_client${VPN_NO}_desc=${OVPN_HOSTNAME} || errorcheck
