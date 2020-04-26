@@ -38,8 +38,12 @@ fi
 
 # functions
 errorcheck(){
- echo "$1 reported an error..."
- logger -t "$MY_ADDON_NAME addon" "$1 reported an error"
+ $ERROR=$1
+ if [ -z "$1"]; then
+  $ERROR="Something"
+ fi
+ echo "$ERROR reported an error..."
+ logger -t "$MY_ADDON_NAME addon" "$ERROR reported an error"
  exit 1
 }
 
@@ -108,7 +112,7 @@ checkConnName(){
  if echo $EXISTING_NAME | grep -v $STR_COMPARE >/dev/null 2>&1
  then
   logger -t "$MY_ADDON_NAME addon" "decription must contain nordvpn (VPNClient$VPN_NO)..."
-  errorcheck
+  errorcheck "${FUNCNAME[0]}"
  fi
 }
 
@@ -160,7 +164,6 @@ setVPN(){
  else
   echo "recommended server for VPN Client connection $VPN_NO is already the recommended server - $OVPN_HOSTNAME"
  fi
- SCRIPTSECTION=
 }
 
 getCRONentry(){
