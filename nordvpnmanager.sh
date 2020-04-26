@@ -24,7 +24,6 @@ VPNPROT_SHORT=${VPNPROT/*_/}
 SCRIPT=$(readlink -f "$0")
 # Absolute path this script is in, thus /home/user/bin
 SCRIPTPATH=$(dirname "$SCRIPT")
-SCRIPTPATH=/jffs/scripts/nordvpnmanager
 # load standard variables and helper script
 source /usr/sbin/helper.sh
 source "$SCRIPTPATH/addon_vars"

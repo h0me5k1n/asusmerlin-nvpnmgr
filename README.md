@@ -9,6 +9,13 @@ an Asus router running v384.15 or later of the Merlin firmware.
 
 a VPN connection with the string "nordvpn" needs to exist in on of the 5 VPN client configurations on the router. Configure this initially using the information from NordVPN about configuring the connection.
 
+## Installation (Script)
+To install the required files, run the following command on the Asus router running Merlin firmware:
+
+```
+wget -O - https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/master/install.sh | bash
+```
+
 ## Usage (CLI)
 
 where [1|2|3|4|5] is noted, this refers to the instance of the VPN connection
