@@ -18,6 +18,8 @@ source /usr/sbin/helper.sh
 source "$SCRIPTPATH/addon_vars"
 JSONSCRIPT="$SCRIPTPATH/JSON.sh"
 
+cd "$SCRIPTPATH"
+
 # variables
 EVENT=$MY_ADDON_NAME
 TYPE=$1
@@ -37,6 +39,7 @@ fi
 # functions
 errorcheck(){
  echo "$SCRIPTSECTION reported an error..."
+ logger -t "$MY_ADDON_NAME addon" "$SCRIPTSECTION reported an error"
  exit 1
 }
 
@@ -205,20 +208,20 @@ setCRONentry(){
  then
   # replace existing
   cru d ${MY_ADDON_NAME}${VPN_NO}
-  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} ${MY_ADDON_NAME} update ${VPN_NO} ${VPNPROT}"
+  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}"
  else
   # or add new if not exist
-  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} ${MY_ADDON_NAME} update ${VPN_NO} ${VPNPROT}"
+  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}"
  fi
  # add persistent cru entry to /jffs/scripts/services-start for restarts
  if cat /jffs/scripts/services-start | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
  then
   # remove and replace existing
   sed -i "/${MY_ADDON_NAME}${VPN_NO}/d" /jffs/scripts/services-start      
-  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} ${MY_ADDON_NAME} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
+  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
  else
   # or add new if not exist
-  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} ${MY_ADDON_NAME} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
+  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
  fi
  am_settings_set nvpn_cron${VPN_NO} 1
  am_settings_set nvpn_cronstr${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS}"
@@ -261,9 +264,9 @@ fi
 if [ "$TYPE" = "schedule" ]
 then
  checkConnName
- CRU_MINUTE=$5
- CRU_HOUR=$6
- CRU_DAYNUMBERS=$7
+ CRU_MINUTE=$4
+ CRU_HOUR=$5
+ CRU_DAYNUMBERS=$6
  
  # default options 5:25am on Mondays and Thursdays
  [ -z "$CRU_MINUTE" ] && CRU_MINUTE=25
@@ -292,7 +295,7 @@ then
  checkConnName
  [ -z "$VPN_NO" ] && errorcheck
  logger -t "$MY_ADDON_NAME addon" "Removing scheduled update to recommended NORDVPN server (VPNClient$VPN_NO)..."
- setCRONentry
- logger -t "$MY_ADDON_NAME addon" "Removal complete (VPNClient$VPN_NO)"
+ delCRONentry
+ logger -t "$MY_ADDON_NAME addon" "Removal of schedule complete (VPNClient$VPN_NO)"
 fi
 
