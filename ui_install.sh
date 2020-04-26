@@ -9,10 +9,16 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 # load standard variables
 source "$SCRIPTPATH/addon_vars"
 
+if [ ! -f "/jffs/addons/$MY_ADDON_NAME/$MY_ADDON_PAGE" ]; then
+    echo "/jffs/addons/$MY_ADDON_NAME/$MY_ADDON_PAGE does not exist. Cannot enable UI without this file."
+    exit 5
+fi
+
 # Does the firmware support addons?
 nvram get rc_support | grep -q am_addons
 if [ $? != 0 ]
 then
+    echo "This firmware does not support addons!"
     logger "$MY_ADDON_NAME addon" "This firmware does not support addons!"
     exit 5
 fi
@@ -22,6 +28,7 @@ am_get_webui_page /jffs/addons/$MY_ADDON_NAME/$MY_ADDON_PAGE
 
 if [ "$am_webui_page" = "none" ]
 then
+    echo "Unable to install $MY_ADDON_PAGE"
     logger "$MY_ADDON_NAME addon" "Unable to install $MY_ADDON_PAGE"
     exit 5
 fi
