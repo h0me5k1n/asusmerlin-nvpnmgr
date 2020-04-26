@@ -24,7 +24,7 @@ where [1|2|3|4|5] is noted, this refers to the instance of the VPN connection
 where [openvpn_udp|openvpn_tcp] is noted, this refers to the VPN protocol (as named by NordVPN in their API). This is currently fixed to use the "openvpn_udp" VPN profiles. Future version may support multiple protocols (see "To Do" section).
 where [minute] is noted, this refers to the minute in the hour when a scheduled update should take place
 where [hour] is noted, this refers to the hour in the day/s when a scheduled update should take place
-where [day numbers] is noted, this refers to the days when an update will take place from 1 to 7 (1 = Monday). Multiple days can be specified separating days with a comma (e.g. "1,5" is Monday and Friday)
+where [day numbers] is noted, this refers to the days when an update will take place from 0 to 6 (1 = Monday). Multiple days can be specified separating days with a comma (e.g. "1,5" is Monday and Friday). If a * is needed, it must be enclosed in quotes (e.g. "*")
 
 ### Manual Server Update
 to manually trigger an update
