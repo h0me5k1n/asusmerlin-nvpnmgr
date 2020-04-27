@@ -38,94 +38,114 @@ fi
 
 # functions
 errorcheck(){
- $ERROR=$1
- if [ -z "$1"]; then
-  $ERROR="Something"
- fi
- echo "$ERROR reported an error..."
- logger -t "$MY_ADDON_NAME addon" "$ERROR reported an error"
+ echo "$SCRIPTSECTION reported an error..."
+ logger -t "$MY_ADDON_NAME addon" "$SCRIPTSECTION reported an error"
  exit 1
 }
 
 # use to create content of vJSON variable
 getRecommended(){
- curl -s -m 5 "https://api.nordvpn.com/v1/servers/recommendations?filters\[servers_groups\]\[identifier\]=legacy_standard&filters\[servers_technologies\]\[identifier\]=${VPNPROT}&limit=1" || errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getRecommended
+ curl -s -m 5 "https://api.nordvpn.com/v1/servers/recommendations?filters\[servers_groups\]\[identifier\]=legacy_standard&filters\[servers_technologies\]\[identifier\]=${VPNPROT}&limit=1" || errorcheck
+ SCRIPTSECTION=
 }
 
 # use to download the JSON.sh script from github
 getJSONSH(){
+ SCRIPTSECTION=getJSONSH
  [ -f "$JSONSCRIPT" ] && rm "$JSONSCRIPT"
- wget -O "$JSONSCRIPT" "https://raw.githubusercontent.com/dominictarr/JSON.sh/master/JSON.sh" >/dev/null 2>&1 || errorcheck "${FUNCNAME[0]}"
+ wget -O "$JSONSCRIPT" "https://raw.githubusercontent.com/dominictarr/JSON.sh/master/JSON.sh" >/dev/null 2>&1 || errorcheck
  chmod +x "$JSONSCRIPT"
+ SCRIPTSECTION=
 }
 
 # use to create content of OVPN_IP variable
 getIP(){
+ SCRIPTSECTION=getJSONSH
  # check vJSON variable contents exist
- [ -z "$vJSON" ] && errorcheck "${FUNCNAME[0]}"
+ [ -z "$vJSON" ] && errorcheck
  # check JSONSCRIPT script exists
- [ ! -f "$JSONSCRIPT" ] && errorcheck "${FUNCNAME[0]}"
+ [ ! -f "$JSONSCRIPT" ] && errorcheck
  echo $vJSON | "$JSONSCRIPT" -b | grep station | cut -f2 | tr -d '"'
+ SCRIPTSECTION=
 }
 
 # use to create content of OVPN_HOSTNAME variable
 getHostname(){
- [ -z "$vJSON" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getHostname
+ [ -z "$vJSON" ] && errorcheck
  echo $vJSON | "$JSONSCRIPT" -b | grep hostname | cut -f2 | tr -d '"'
+ SCRIPTSECTION=
 }
 
 # use to create content of OVPNFILE variable
 getOVPNFilename(){
- [ -z "$OVPN_HOSTNAME" -o -z "$VPNPROT_SHORT" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getOVPNFile
+ [ -z "$OVPN_HOSTNAME" -o -z "$VPNPROT_SHORT" ] && errorcheck
  echo ${OVPN_HOSTNAME}.${VPNPROT_SHORT}.ovpn
+ SCRIPTSECTION=
 }
 
 # use to create content of OVPN_DETAIL variable
 getOVPNcontents(){
+ SCRIPTSECTION=getOVPNcontents
  [ -z "$OVPNFILE" -o -z "$VPNPROT_SHORT" ] && errorcheck
- curl -s -m 5 "https://downloads.nordcdn.com/configs/files/ovpn_$VPNPROT_SHORT/servers/$OVPNFILE" || errorcheck "${FUNCNAME[0]}"
+ curl -s -m 5 "https://downloads.nordcdn.com/configs/files/ovpn_$VPNPROT_SHORT/servers/$OVPNFILE" || errorcheck
+ SCRIPTSECTION=
 }
 
 # use to create content of CLIENT_CA variable
 getClientCA(){
- [ -z "$OVPN_DETAIL" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getOVPNcontents
+ [ -z "$OVPN_DETAIL" ] && errorcheck
  echo "$OVPN_DETAIL" | awk '/<ca>/{flag=1;next}/<\/ca>/{flag=0}flag' | sed '/^#/ d' 
+ SCRIPTSECTION=
 }
 
 # use to create content of CRT_CLIENT_STATIC variable
 getClientCRT(){
- [ -z "$OVPN_DETAIL" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getOVPNcontents
+ [ -z "$OVPN_DETAIL" ] && errorcheck
  echo "$OVPN_DETAIL" | awk '/<tls-auth>/{flag=1;next}/<\/tls-auth>/{flag=0}flag' | sed '/^#/ d' 
+ SCRIPTSECTION=
 }
 
 # use to create content of EXISTING_NAME variable
 getConnName(){
+ SCRIPTSECTION=getConnName
  [ -z "$VPN_NO" ] && errorcheck
- nvram get vpn_client${VPN_NO}_desc || errorcheck "${FUNCNAME[0]}"
+ nvram get vpn_client${VPN_NO}_desc || errorcheck
+ SCRIPTSECTION=
 }
 
 # EXISTING_NAME check - it must contain "nordvpn"
 checkConnName(){
- [ -z "$VPN_NO" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=checkConnName
+ [ -z "$VPN_NO" ] && errorcheck
  EXISTING_NAME=$(getConnName)
  STR_COMPARE=nordvpn
  if echo $EXISTING_NAME | grep -v $STR_COMPARE >/dev/null 2>&1
  then
   logger -t "$MY_ADDON_NAME addon" "decription must contain nordvpn (VPNClient$VPN_NO)..."
-  errorcheck "${FUNCNAME[0]}"
+  errorcheck
  fi
+ SCRIPTSECTION=
 }
 
 # use to create content of EXISTING_IP variable
 getServerIP(){
- [ -z "$VPN_NO" ] && errorcheck "${FUNCNAME[0]}"
- nvram show | grep vpn_client${VPN_NO}_addr | cut -d= -f2 || errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getServerIP
+ [ -z "$VPN_NO" ] && errorcheck
+ nvram show | grep vpn_client${VPN_NO}_addr | cut -d= -f2 || errorcheck
+ SCRIPTSECTION=
 }
 
 # use to create content of CONNECTSTATE variable - set to 2 if the VPN is connected
 getConnectState(){
- [ -z "$VPN_NO" ] && errorcheck "${FUNCNAME[0]}"
- nvram show | grep vpn_client${VPN_NO}_state | cut -d= -f2 || errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getConnectState
+ [ -z "$VPN_NO" ] && errorcheck
+ nvram show | grep vpn_client${VPN_NO}_state | cut -d= -f2 || errorcheck
+ SCRIPTSECTION=
 }
 
 # configure VPN
@@ -142,15 +162,19 @@ setVPN(){
  EXISTING_IP=$(getServerIP)
  CONNECTSTATE=$(getConnectState)
  
- [ -z "$OVPN_IP" -o -z "$OVPN_HOSTNAME" -o -z "$VPN_NO" ] && errorcheck "setVPN1"
- [ -z "$CLIENT_CA" -o -z "$CRT_CLIENT_STATIC" ] && errorcheck "setVPN2"
- [ -z "$CONNECTSTATE" ] && errorcheck "setVPN3"
+ SCRIPTSECTION=setVPN1
+ [ -z "$OVPN_IP" -o -z "$OVPN_HOSTNAME" -o -z "$VPN_NO" ] && errorcheck
+ SCRIPTSECTION=setVPN2
+ [ -z "$CLIENT_CA" -o -z "$CRT_CLIENT_STATIC" ] && errorcheck
+ SCRIPTSECTION=setVPN3
+ [ -z "$CONNECTSTATE" ] && errorcheck
  # check that new VPN server IP is different
  if [ "$OVPN_IP" != "$EXISTING_IP" ]
  then
+  SCRIPTSECTION=setVPN4
   echo "updating VPN Client connection $VPN_NO to $OVPN_HOSTNAME"
-  nvram set vpn_client${VPN_NO}_addr=${OVPN_IP} || errorcheck "setVPN4 IP"
-  nvram set vpn_client${VPN_NO}_desc=${OVPN_HOSTNAME} || errorcheck "setVPN4 Hostname"
+  nvram set vpn_client${VPN_NO}_addr=${OVPN_IP} || errorcheck
+  nvram set vpn_client${VPN_NO}_desc=${OVPN_HOSTNAME} || errorcheck
   echo "$CLIENT_CA" > /jffs/openvpn/vpn_crt_client${VPN_NO}_ca
   echo "${CRT_CLIENT_STATIC}" > /jffs/openvpn/vpn_crt_client${VPN_NO}_static
   nvram commit
@@ -164,17 +188,21 @@ setVPN(){
  else
   echo "recommended server for VPN Client connection $VPN_NO is already the recommended server - $OVPN_HOSTNAME"
  fi
+ SCRIPTSECTION=
 }
 
 getCRONentry(){
- [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=getCRONentry
+ [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" ] && errorcheck
  cru l | grep "${MY_ADDON_NAME}${VPN_NO}" | sed 's/ sh.*//'
  [ $? -ne 0 ] && echo NOTFOUND
+ SCRIPTSECTION=
 }
 
 setCRONentry(){
- [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" -o -z "$SCRIPTPATH" -o -z "$MY_ADDON_SCRIPT" -o -z "$VPNPROT" ] && errorcheck "${FUNCNAME[0]}"
- [ -z "$CRU_MINUTE" -o -z "$CRU_HOUR" -o -z "$CRU_DAYNUMBERS" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=setCRONentry
+ [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" -o -z "$SCRIPTPATH" -o -z "$MY_ADDON_SCRIPT" -o -z "$VPNPROT" ] && errorcheck
+ [ -z "$CRU_MINUTE" -o -z "$CRU_HOUR" -o -z "$CRU_DAYNUMBERS" ] && errorcheck
  # add new cru entry
  if cru l | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
  then
@@ -197,10 +225,12 @@ setCRONentry(){
  fi
  am_settings_set nvpn_cron${VPN_NO} 1
  am_settings_set nvpn_cronstr${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS}"
+ SCRIPTSECTION=
 }
 
 delCRONentry(){
- [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" ] && errorcheck "${FUNCNAME[0]}"
+ SCRIPTSECTION=delCRONentry
+ [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" ] && errorcheck
  # remove cru entry
  if cru l | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
  then
@@ -215,6 +245,7 @@ delCRONentry(){
  fi
  am_settings_set nvpn_cron${VPN_NO}
  am_settings_set nvpn_cronstr${VPN_NO}
+ SCRIPTSECTION=
 }
 
 # ----------------
@@ -262,7 +293,7 @@ fi
 if [ "$TYPE" = "cancel" ]
 then
  checkConnName
- [ -z "$VPN_NO" ] && errorcheck "${FUNCNAME[0]}"
+ [ -z "$VPN_NO" ] && errorcheck
  logger -t "$MY_ADDON_NAME addon" "Removing scheduled update to recommended NORDVPN server (VPNClient$VPN_NO)..."
  delCRONentry
  logger -t "$MY_ADDON_NAME addon" "Removal of schedule complete (VPNClient$VPN_NO)"
