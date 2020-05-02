@@ -285,7 +285,7 @@ DeleteScheduleMenu(){
 
 	SetVPNClient
 
-	printf "Please wait...\\n"
+	printf "Please wait for removal...\\n"
 	$CONTROLSCRIPT cancel "$VPN_NO"
 	printf "Complete\\n"
 	PressEnter
