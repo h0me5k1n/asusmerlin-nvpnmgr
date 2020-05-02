@@ -1,5 +1,6 @@
 #!/bin/sh
 # menu system
+# inspired by approaches in repos from https://github.com/jackyaz
 
 # Absolute path to this script, e.g. /home/user/bin/foo.sh
 SCRIPT=$(readlink -f "$0")

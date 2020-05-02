@@ -25,6 +25,8 @@ run the following command
 ```
 There is currently no validation on the input for scheduled entries - make sure you enter valid values!
 
+(menu approach inspired by https://github.com/jackyaz)
+
 ## Usage (CLI)
 - where [1|2|3|4|5] is noted, this refers to the instance of the VPN connection
 - where [openvpn_udp|openvpn_tcp] is noted, this refers to the VPN protocol (as named by NordVPN in their API). This is currently fixed to use the "openvpn_udp" VPN profiles. Future version may support multiple protocols (see "To Do" section).
