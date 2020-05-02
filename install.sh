@@ -10,7 +10,12 @@ MY_ADDON_NAME=nordvpnmanager
 GIT_REPO="asusmerlin-nvpnmgr"
 # Github repo branch - modify to pull different branch 
 # (fetch will overwrite local changes)
-GIT_REPO_BRANCH=master
+if [ -z "$1" ]
+then
+    GIT_REPO_BRANCH=master
+else
+    GIT_REPO_BRANCH=development
+fi
 # Github dir
 GITHUB_DIR="https://raw.githubusercontent.com/h0me5k1n/$GIT_REPO/$GIT_REPO_BRANCH"
 # Local repo dir
@@ -42,6 +47,12 @@ GetFiles(){
  chmod 755 "$LOCAL_REPO/$GETFILENAME"
 
  GETFILENAME=ui_install.sh
+ SCRIPTSECTION=get_$GETFILENAME
+ [ -f "$LOCAL_REPO/$GETFILENAME" ] && rm "$LOCAL_REPO/$GETFILENAME"
+ wget -O "$LOCAL_REPO/$GETFILENAME" "$GITHUB_DIR/$GETFILENAME" >/dev/null 2>&1 || errorcheck
+ chmod 755 "$LOCAL_REPO/$GETFILENAME"
+
+ GETFILENAME=nvpnmgr-menu.sh
  SCRIPTSECTION=get_$GETFILENAME
  [ -f "$LOCAL_REPO/$GETFILENAME" ] && rm "$LOCAL_REPO/$GETFILENAME"
  wget -O "$LOCAL_REPO/$GETFILENAME" "$GITHUB_DIR/$GETFILENAME" >/dev/null 2>&1 || errorcheck
@@ -82,4 +93,4 @@ mkdir -p "$LOCAL_REPO"
 # Get files
 GetFiles
 
-echo "installation complete... visit https://github.com/h0me5k1n/asusmerlin-nvpnmgr for usage information"
+echo "installation complete... visit https://github.com/h0me5k1n/asusmerlin-nvpnmgr for CLI usage information or run \"nvpnmgr-menu.sh\" for menu driven configuration."
