@@ -180,6 +180,7 @@ MainMenu(){
 			u)
 				printf "\\n"
                 # update script from github
+				"$LOCAL_REPO/install.sh"
 				PressEnter
 				break
 			;;
