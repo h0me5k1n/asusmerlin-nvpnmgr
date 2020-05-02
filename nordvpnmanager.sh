@@ -2,12 +2,14 @@
 
 # USAGE
 #
+# to check for and list current scheduled update entries
+#  scriptname list
 # to manually trigger an update
-# scriptname update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
+#  scriptname update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
 # to schedule updates using cron/cru
-# scriptname schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
+#  scriptname schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
 # to cancel schedule updates using cron/cru
-# scriptname cancel [1|2|3|4|5] 
+#  scriptname cancel [1|2|3|4|5] 
 
 # Absolute path to this script, e.g. /home/user/bin/foo.sh
 SCRIPT=$(readlink -f "$0")
@@ -26,7 +28,7 @@ TYPE=$1
 VPN_NO=$2
 VPNPROT=$3
 
-VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
+#VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
 VPNPROT_SHORT=${VPNPROT/*_/}
 
 # check processing is for this addon
@@ -136,7 +138,7 @@ checkConnName(){
 getServerIP(){
  SCRIPTSECTION=getServerIP
  [ -z "$VPN_NO" ] && errorcheck
- nvram show | grep vpn_client${VPN_NO}_addr | cut -d= -f2 || errorcheck
+ nvram get vpn_client${VPN_NO}_addr || errorcheck
  SCRIPTSECTION=
 }
 
@@ -144,7 +146,7 @@ getServerIP(){
 getConnectState(){
  SCRIPTSECTION=getConnectState
  [ -z "$VPN_NO" ] && errorcheck
- nvram show | grep vpn_client${VPN_NO}_state | cut -d= -f2 || errorcheck
+ nvram get vpn_client${VPN_NO}_state || errorcheck
  SCRIPTSECTION=
 }
 
@@ -189,6 +191,34 @@ setVPN(){
   echo "recommended server for VPN Client connection $VPN_NO is already the recommended server - $OVPN_HOSTNAME"
  fi
  SCRIPTSECTION=
+}
+
+# check for entries, connection state and schedule entry
+listEntries(){
+    # from 1 to 5
+    for VPN_NO in 1 2 3 4 5
+    do
+        VPN_CLIENTDESC="$(nvram get vpn_client${VPN_NO}_desc | grep nordvpn)"
+        if [ ! -z "$VPN_CLIENTDESC" ]
+        then
+            if [ "$(getConnectState)" = "2" ]
+            then
+                CONNECTSTATE=ACTIVE
+            else
+                CONNECTSTATE=INACTIVE
+            fi
+            cru l | grep "#${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1
+            if [ $? -ne 0 ]
+            then
+                SCHEDULESTATE=UNSCHEDULED
+            else
+                SCHEDULESTATE=SCHEDULED
+            fi
+            echo "$VPN_NO. ${VPN_CLIENTDESC} (${CONNECTSTATE} and ${SCHEDULESTATE})"
+        else
+            echo "$VPN_NO. no nordvpn entry found"
+        fi
+    done
 }
 
 getCRONentry(){
@@ -299,3 +329,8 @@ then
  logger -t "$MY_ADDON_NAME addon" "Removal of schedule complete (VPNClient$VPN_NO)"
 fi
 
+if [ "$TYPE" = "list" ]
+then
+ echo "VPN CLient List:"
+ listEntries
+fi

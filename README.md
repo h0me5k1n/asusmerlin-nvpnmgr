@@ -18,8 +18,14 @@ To install the required files, run the following command on the Asus router runn
 wget -O - https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/master/install.sh | sh
 ```
 
-## Usage (CLI)
+## Usage (Menu)
+run the following command
+```
+./nvpnmgr-menu.sh
+```
+There is currently no validation on the input for scheduled entries - make sure you enter valid values!
 
+## Usage (CLI)
 - where [1|2|3|4|5] is noted, this refers to the instance of the VPN connection
 - where [openvpn_udp|openvpn_tcp] is noted, this refers to the VPN protocol (as named by NordVPN in their API). This is currently fixed to use the "openvpn_udp" VPN profiles. Future version may support multiple protocols (see "To Do" section).
 - where [minute] is noted, this refers to the minute in the hour when a scheduled update should take place
@@ -60,8 +66,11 @@ The actual script has been created but will not complete successfully without th
 ## To Do
 Possible enhancements (when I get round to it!):
 
+- create a menu DONE
+- create menu entry validation
 - query available protocols via NordVPN api
-- handle multiple protocols
+- handle tcp and udp protocols DONE
+- handle all protocols
 - write options to temp nvram (I haven't figured out how a web page passes parameters to an addon script. This might be needed instead of passing them from the page. e.g. page write temp nvram entries that are used by the script and then discarded?!?)
 - create web page for UI (I need help with this!)
 - test web page functions
