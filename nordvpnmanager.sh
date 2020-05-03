@@ -5,9 +5,9 @@
 # to check for and list current scheduled update entries
 #  scriptname list
 # to manually trigger an update
-#  scriptname update [1|2|3|4|5] [openvpn_udp|openvpn_tcp]
+#  scriptname update [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [null|double|p2p]
 # to schedule updates using cron/cru
-#  scriptname schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers]
+#  scriptname schedule [1|2|3|4|5] [openvpn_udp|openvpn_tcp] [minute] [hour] [day numbers] [null|double|p2p]
 # to cancel schedule updates using cron/cru
 #  scriptname cancel [1|2|3|4|5] 
 
@@ -27,6 +27,11 @@ EVENT=$MY_ADDON_NAME
 TYPE=$1
 VPN_NO=$2
 VPNPROT=$3
+# set VPN type (default "Standard VPN servers")
+VPNTYPE=legacy_standard
+# Other VPN types
+[ "$4" == "double" ] || [ "$7" == "double" ] && VPNTYPE=legacy_double_vpn # Double VPN
+[ "$4" == "p2p" ] || [ "$7" == "p2p" ] && VPNTYPE=legacy_p2p # P2P
 
 #VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
 VPNPROT_SHORT=${VPNPROT/*_/}
@@ -48,7 +53,7 @@ errorcheck(){
 # use to create content of vJSON variable
 getRecommended(){
  SCRIPTSECTION=getRecommended
- curl -s -m 5 "https://api.nordvpn.com/v1/servers/recommendations?filters\[servers_groups\]\[identifier\]=legacy_standard&filters\[servers_technologies\]\[identifier\]=${VPNPROT}&limit=1" || errorcheck
+ curl -s -m 5 "https://api.nordvpn.com/v1/servers/recommendations?filters\[servers_groups\]\[identifier\]=$VPNTYPE&filters\[servers_technologies\]\[identifier\]=${VPNPROT}&limit=1" || errorcheck
  SCRIPTSECTION=
 }
 
