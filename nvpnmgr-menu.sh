@@ -85,7 +85,7 @@ SetVPNType(){
 	printf "\\n\\e[1mPlease select a VPN Type (x to cancel): \\e[0m\\n"
 	printf "   1. Standard VPN (default)\\n"
 	printf "   2. Double VPN\\n"
-	printf "   2. P2P\\n"
+	printf "   3. P2P\\n"
 	read -r "menu"
 
 	while true; do
@@ -304,7 +304,7 @@ UpdateNowMenu(){
 	printf "Complete\\n"
 	PressEnter
 
-	ReturnToMainMenu "Update VPN complete"
+	ReturnToMainMenu "Update VPN complete ($VPNTYPE)"
 }
 
 ScheduleUpdateMenu(){
@@ -323,7 +323,7 @@ ScheduleUpdateMenu(){
 	printf "Complete\\n"
 	PressEnter
 
-	ReturnToMainMenu "Scheduled VPN update complete"
+	ReturnToMainMenu "Scheduled VPN update complete ($VPNTYPE)"
 }
 
 DeleteScheduleMenu(){
