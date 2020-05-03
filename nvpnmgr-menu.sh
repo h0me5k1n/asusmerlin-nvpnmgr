@@ -115,6 +115,9 @@ SetVPNType(){
 			;;
 		esac
 	done
+	if [ -z "$VPNTYPE" ]; then
+		ReturnToMainMenu "type not set or previous operation cancelled"
+	fi
 }
 
 SetDays(){
