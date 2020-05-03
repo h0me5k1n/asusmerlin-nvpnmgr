@@ -254,28 +254,28 @@ MainMenu(){
 
 UpdateNowMenuHeader(){
 	printf "   Choose options as follows:\\n"
-	printf "   VPN client [1-5]\\n"
-	printf "   protocol to use (pick from list)\\n"
-	printf "   type to use (pick from list)\\n"
+	printf "     VPN client [1-5]\\n"
+	printf "     protocol to use (pick from list)\\n"
+	printf "     type to use (pick from list)\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
 
 ScheduleUpdateMenuHeader(){
 	printf "   Choose options as follows:\\n"
-	printf "   VPN client [1-5]\\n"
-	printf "   protocol to use (pick from list)\\n"
-	printf "   type to use (pick from list)\\n"
-	printf "   day/s to update [0-7]\\n"
-	printf "   hour/s to update [0-23]\\n"
-	printf "   minute/s to update [0-59]\\n"
+	printf "     VPN client [1-5]\\n"
+	printf "     protocol to use (pick from list)\\n"
+	printf "     type to use (pick from list)\\n"
+	printf "     day/s to update [0-7]\\n"
+	printf "     hour/s to update [0-23]\\n"
+	printf "     minute/s to update [0-59]\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
 
 DeleteScheduleMenuHeader(){
 	printf "   Choose schedule entry to delete:\\n"
-	printf "   VPN client [1-5]\\n"
+	printf "     VPN client [1-5]\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
