@@ -81,6 +81,45 @@ SetVPNProtocol(){
 	fi
 }
 
+SetVPNType(){
+	printf "\\n\\e[1mPlease select a VPN Type (x to cancel): \\e[0m\\n"
+	printf "   1. Standard VPN (default)\\n"
+	printf "   2. Double VPN\\n"
+	printf "   3. P2P\\n"
+	read -r "menu"
+
+	while true; do
+		case "$menu" in
+			1)
+				# check for connections
+				VPNTYPE=standard
+				break
+			;;
+			2)
+				# configure now
+				VPNTYPE=double
+				break
+			;;
+			3)
+				# configure now
+				VPNTYPE=p2p
+				break
+			;;
+			x)
+				ReturnToMainMenu "previous operation cancelled"
+				break
+			;;
+			*)
+				VPNTYPE=standard
+				break
+			;;
+		esac
+	done
+	if [ -z "$VPNTYPE" ]; then
+		ReturnToMainMenu "type not set or previous operation cancelled"
+	fi
+}
+
 SetDays(){
 	printf "\\n\\e[1mPlease choose update day/s (x to cancel - blank for every day): \\e[0m"
 	read -r "CRU_DAYNUMBERS"
@@ -138,6 +177,7 @@ MainMenu(){
 
 	VPN_NO=
 	VPNPROT=
+	VPNTYPE=
 	CRU_HOUR=
 	CRU_DAYNUMBERS=
 	CRU_MINUTE=
@@ -214,26 +254,28 @@ MainMenu(){
 
 UpdateNowMenuHeader(){
 	printf "   Choose options as follows:\\n"
-	printf "   VPN client [1-5]\\n"
-	printf "   protocol to use (pick from list)\\n"
+	printf "     VPN client [1-5]\\n"
+	printf "     protocol to use (pick from list)\\n"
+	printf "     type to use (pick from list)\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
 
 ScheduleUpdateMenuHeader(){
 	printf "   Choose options as follows:\\n"
-	printf "   VPN client [1-5]\\n"
-	printf "   protocol to use (pick from list)\\n"
-	printf "   day/s to update [0-7]\\n"
-	printf "   hour/s to update [0-23]\\n"
-	printf "   minute/s to update [0-59]\\n"
+	printf "     VPN client [1-5]\\n"
+	printf "     protocol to use (pick from list)\\n"
+	printf "     type to use (pick from list)\\n"
+	printf "     day/s to update [0-7]\\n"
+	printf "     hour/s to update [0-23]\\n"
+	printf "     minute/s to update [0-59]\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
 
 DeleteScheduleMenuHeader(){
 	printf "   Choose schedule entry to delete:\\n"
-	printf "   VPN client [1-5]\\n"
+	printf "     VPN client [1-5]\\n"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 }
@@ -254,13 +296,12 @@ UpdateNowMenu(){
 	
 	SetVPNClient
 	SetVPNProtocol
+	SetVPNType
 	
-	printf "Please wait...\\n"
-	$CONTROLSCRIPT update "$VPN_NO" "$VPNPROT"
-	printf "Complete\\n"
+	$CONTROLSCRIPT update "$VPN_NO" "$VPNPROT" "$VPNTYPE"
 	PressEnter
 
-	ReturnToMainMenu "Update VPN complete"
+	ReturnToMainMenu "Update VPN complete ($VPNTYPE)"
 }
 
 ScheduleUpdateMenu(){
@@ -269,16 +310,15 @@ ScheduleUpdateMenu(){
 	
 	SetVPNClient
 	SetVPNProtocol
+	SetVPNType
 	SetDays
 	SetHours
 	SetMinutes
 
-	printf "Please wait...\\n"
-	$CONTROLSCRIPT schedule "$VPN_NO" "$VPNPROT" "$CRU_MINUTE" "$CRU_HOUR" "$CRU_DAYNUMBERS"
-	printf "Complete\\n"
+	$CONTROLSCRIPT schedule "$VPN_NO" "$VPNPROT" "$CRU_MINUTE" "$CRU_HOUR" "$CRU_DAYNUMBERS" "$VPNTYPE"
 	PressEnter
 
-	ReturnToMainMenu "Scheduled VPN update complete"
+	ReturnToMainMenu "Scheduled VPN update complete ($VPNTYPE)"
 }
 
 DeleteScheduleMenu(){
@@ -287,9 +327,7 @@ DeleteScheduleMenu(){
 
 	SetVPNClient
 
-	printf "Please wait for removal...\\n"
 	$CONTROLSCRIPT cancel "$VPN_NO"
-	printf "Complete\\n"
 	PressEnter
 
 	ReturnToMainMenu "Delete VPN schedule complete"

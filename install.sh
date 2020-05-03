@@ -29,6 +29,7 @@ errorcheck(){
 
 # use to download the files from github
 GetFiles(){
+ echo "downloading $GIT_REPO using $GIT_REPO_BRANCH branch"
  GETFILENAME=addon_vars
  SCRIPTSECTION=get_$GETFILENAME
  [ -f "$LOCAL_REPO/$GETFILENAME" ] && rm "$LOCAL_REPO/$GETFILENAME"
