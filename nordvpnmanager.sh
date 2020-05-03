@@ -30,16 +30,19 @@ VPNPROT=$3
 # set VPN type (default "Standard VPN servers")
 VPNTYPE=legacy_standard
 # Other VPN types
-if [ "$4" == "double" ] || [ "$8" == "double" ]
+if [ "$4" == "double" ] || [ "$7" == "double" ]
 then
- echo "Configuring Double VPN..."
+ echo "configuring Double VPN..."
  VPNTYPE=legacy_double_vpn  # Double VPN
-elif [ "$4" == "p2p" ] || [ "$8" == "p2p" ]
+ VPNTYPE_PARAM=double
+elif [ "$4" == "p2p" ] || [ "$7" == "p2p" ]
 then
- echo "Configuring P2P VPN..."
+ echo "configuring P2P VPN..."
  VPNTYPE=legacy_p2p # P2P
+ VPNTYPE_PARAM=p2p
 else
- echo "Configuring Standard VPN..."
+ echo "configuring Standard VPN..."
+ VPNTYPE_PARAM=standard
 fi
 #VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
 VPNPROT_SHORT=${VPNPROT/*_/}
@@ -165,6 +168,7 @@ getConnectState(){
 
 # configure VPN
 setVPN(){
+ echo "updating VPN Client connection $VPN_NO now..."
  vJSON=$(getRecommended)
  getJSONSH
  OVPN_IP=$(getIP)
@@ -187,7 +191,7 @@ setVPN(){
  if [ "$OVPN_IP" != "$EXISTING_IP" ]
  then
   SCRIPTSECTION=setVPN4
-  echo "updating VPN Client connection $VPN_NO to $OVPN_HOSTNAME"
+  echo "changing VPN Client connection $VPN_NO to $OVPN_HOSTNAME"
   nvram set vpn_client${VPN_NO}_addr=${OVPN_IP} || errorcheck
   nvram set vpn_client${VPN_NO}_desc=${OVPN_HOSTNAME} || errorcheck
   echo "$CLIENT_CA" > /jffs/openvpn/vpn_crt_client${VPN_NO}_ca
@@ -200,6 +204,7 @@ setVPN(){
    sleep 3
    service start_vpnclient${VPN_NO}
   fi
+  echo "complete"
  else
   echo "recommended server for VPN Client connection $VPN_NO is already the recommended server - $OVPN_HOSTNAME"
  fi
@@ -244,35 +249,38 @@ getCRONentry(){
 
 setCRONentry(){
  SCRIPTSECTION=setCRONentry
- [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" -o -z "$SCRIPTPATH" -o -z "$MY_ADDON_SCRIPT" -o -z "$VPNPROT" ] && errorcheck
+ echo "scheduling VPN Client connection $VPN_NO updating..."
+ [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" -o -z "$SCRIPTPATH" -o -z "$MY_ADDON_SCRIPT" -o -z "$VPNPROT" -o -z "$VPNTYPE_PARAM" ] && errorcheck
  [ -z "$CRU_MINUTE" -o -z "$CRU_HOUR" -o -z "$CRU_DAYNUMBERS" ] && errorcheck
  # add new cru entry
  if cru l | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
  then
   # replace existing
   cru d ${MY_ADDON_NAME}${VPN_NO}
-  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}"
+  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT} ${VPNTYPE_PARAM}"
  else
   # or add new if not exist
-  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}"
+  cru a ${MY_ADDON_NAME}${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT} ${VPNTYPE_PARAM}"
  fi
  # add persistent cru entry to /jffs/scripts/services-start for restarts
  if cat /jffs/scripts/services-start | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
  then
   # remove and replace existing
   sed -i "/${MY_ADDON_NAME}${VPN_NO}/d" /jffs/scripts/services-start      
-  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
+  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT} ${VPNTYPE_PARAM}\"" >> /jffs/scripts/services-start
  else
   # or add new if not exist
-  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT}\"" >> /jffs/scripts/services-start
+  echo "cru a ${MY_ADDON_NAME}${VPN_NO} \"${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS} sh ${SCRIPTPATH}/${MY_ADDON_SCRIPT} update ${VPN_NO} ${VPNPROT} ${VPNTYPE_PARAM}\"" >> /jffs/scripts/services-start
  fi
  am_settings_set nvpn_cron${VPN_NO} 1
  am_settings_set nvpn_cronstr${VPN_NO} "${CRU_MINUTE} ${CRU_HOUR} * * ${CRU_DAYNUMBERS}"
+ echo "complete"
  SCRIPTSECTION=
 }
 
 delCRONentry(){
  SCRIPTSECTION=delCRONentry
+ echo "removing VPN Client connection $VPN_NO schedule entry..."
  [ -z "$VPN_NO" -o -z "$MY_ADDON_NAME" ] && errorcheck
  # remove cru entry
  if cru l | grep "${MY_ADDON_NAME}${VPN_NO}" >/dev/null 2>&1 
@@ -288,6 +296,7 @@ delCRONentry(){
  fi
  am_settings_set nvpn_cron${VPN_NO}
  am_settings_set nvpn_cronstr${VPN_NO}
+ echo "complete"
  SCRIPTSECTION=
 }
 
@@ -301,7 +310,7 @@ then
  checkConnName
  logger -t "$MY_ADDON_NAME addon" "Updating to recommended NORDVPN server (VPNClient$VPN_NO)..."
  setVPN
- logger -t "$MY_ADDON_NAME addon" "Update complete (VPNClient$VPN_NO - server $OVPN_HOSTNAME)"
+ logger -t "$MY_ADDON_NAME addon" "Update complete (VPNClient$VPN_NO - server $OVPN_HOSTNAME - type $VPNTYPE_PARAM)"
 fi
 
 if [ "$TYPE" = "schedule" ]
@@ -330,7 +339,7 @@ then
 
  logger -t "$MY_ADDON_NAME addon" "Configuring scheduled update to recommended NORDVPN server (VPNClient$VPN_NO)..."
  setCRONentry
- logger -t "$MY_ADDON_NAME addon" "Scheduling complete (VPNClient$VPN_NO)"
+ logger -t "$MY_ADDON_NAME addon" "Scheduling complete (VPNClient$VPN_NO - type $VPNTYPE_PARAM)"
 fi
 
 if [ "$TYPE" = "cancel" ]

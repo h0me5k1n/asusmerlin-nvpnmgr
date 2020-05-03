@@ -298,9 +298,7 @@ UpdateNowMenu(){
 	SetVPNProtocol
 	SetVPNType
 	
-	printf "Please wait...\\n"
 	$CONTROLSCRIPT update "$VPN_NO" "$VPNPROT" "$VPNTYPE"
-	printf "Complete\\n"
 	PressEnter
 
 	ReturnToMainMenu "Update VPN complete ($VPNTYPE)"
@@ -317,9 +315,7 @@ ScheduleUpdateMenu(){
 	SetHours
 	SetMinutes
 
-	printf "Please wait...\\n"
 	$CONTROLSCRIPT schedule "$VPN_NO" "$VPNPROT" "$CRU_MINUTE" "$CRU_HOUR" "$CRU_DAYNUMBERS" "$VPNTYPE"
-	printf "Complete\\n"
 	PressEnter
 
 	ReturnToMainMenu "Scheduled VPN update complete ($VPNTYPE)"
@@ -331,9 +327,7 @@ DeleteScheduleMenu(){
 
 	SetVPNClient
 
-	printf "Please wait for removal...\\n"
 	$CONTROLSCRIPT cancel "$VPN_NO"
-	printf "Complete\\n"
 	PressEnter
 
 	ReturnToMainMenu "Delete VPN schedule complete"
