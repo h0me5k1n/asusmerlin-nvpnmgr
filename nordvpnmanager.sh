@@ -30,19 +30,22 @@ VPNPROT=$3
 # set VPN type (default "Standard VPN servers")
 VPNTYPE=legacy_standard
 # Other VPN types
-if [ "$4" == "double" ] || [ "$7" == "double" ]
+if [ "$TYPE" != "list" ]
 then
- echo "configuring Double VPN..."
- VPNTYPE=legacy_double_vpn  # Double VPN
- VPNTYPE_PARAM=double
-elif [ "$4" == "p2p" ] || [ "$7" == "p2p" ]
-then
- echo "configuring P2P VPN..."
- VPNTYPE=legacy_p2p # P2P
- VPNTYPE_PARAM=p2p
-else
- echo "configuring Standard VPN..."
- VPNTYPE_PARAM=standard
+    if [ "$4" == "double" ] || [ "$7" == "double" ]
+    then
+    echo "configuring Double VPN..."
+    VPNTYPE=legacy_double_vpn  # Double VPN
+    VPNTYPE_PARAM=double
+    elif [ "$4" == "p2p" ] || [ "$7" == "p2p" ]
+    then
+    echo "configuring P2P VPN..."
+    VPNTYPE=legacy_p2p # P2P
+    VPNTYPE_PARAM=p2p
+    else
+    echo "configuring Standard VPN..."
+    VPNTYPE_PARAM=standard
+    fi
 fi
 #VPNPROT=openvpn_udp # use openvpn_udp or openvpn_tcp - this sets the default to openvpn_udp no matter what you pass to the script
 VPNPROT_SHORT=${VPNPROT/*_/}
