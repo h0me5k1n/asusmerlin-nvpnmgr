@@ -749,9 +749,9 @@ getOVPNArchives(){
 	
 	### WeVPN ###
 	# Standard UDP
-	Download_File https://wevpn.com/resources/openvpn/UDP.zip /tmp/wevpn_udp_standard.zip
+	Download_File https://wevpn.com/resources/openvpn.bak/UDP.zip /tmp/wevpn_udp_standard.zip
 	# Standard TCP
-	Download_File https://wevpn.com/resources/openvpn/TCP.zip /tmp/wevpn_tcp_standard.zip
+	Download_File https://wevpn.com/resources/openvpn.bak/TCP.zip /tmp/wevpn_tcp_standard.zip
 	###########
 	
 	wevpnchanged="$(CompareArchiveContents "/tmp/wevpn_udp_standard.zip /tmp/wevpn_tcp_standard.zip")"
