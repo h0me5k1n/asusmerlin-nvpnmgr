@@ -500,7 +500,7 @@ function reload(){
 }
 
 function pass_checked(obj,showobj){
-switchType(obj,showobj.checked,true);
+	switchType(obj,showobj.checked,true);
 }
 
 function SaveConfig(){

@@ -14,6 +14,7 @@
 #######################################################
 
 ##########         Shellcheck directives     ##########
+# shellcheck disable=SC2009
 # shellcheck disable=SC2016
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
@@ -26,7 +27,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="vpnmgr"
-readonly SCRIPT_VERSION="v2.3.1"
+readonly SCRIPT_VERSION="v2.3.2"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -593,7 +594,7 @@ getServersforCity(){
 }
 
 getCountryData(){
-	Print_Output true "Refreshing NordVPN country data..." "$PASS"
+	Print_Output true "Refreshing NordVPN country data..."
 	/usr/sbin/curl -fsL --retry 3 "https://api.nordvpn.com/v1/servers/countries" | jq -r > /tmp/nordvpn_countrydata
 	countrydata="$(cat /tmp/nordvpn_countrydata)"
 	[ -z "$countrydata" ] && Print_Output true "Error, country data from NordVPN failed to download" "$ERR" && return 1
@@ -725,7 +726,7 @@ getConnectState(){
 }
 
 getOVPNArchives(){
-	Print_Output true "Refreshing OpenVPN file archives..." "$PASS"
+	Print_Output true "Refreshing OpenVPN file archives..."
 	
 	### PIA ###
 	# Standard UDP
@@ -749,9 +750,9 @@ getOVPNArchives(){
 	
 	### WeVPN ###
 	# Standard UDP
-	Download_File https://wevpn.com/resources/openvpn.bak/UDP.zip /tmp/wevpn_udp_standard.zip
+	Download_File "$SCRIPT_REPO/wevpn_udp_standard.zip" /tmp/wevpn_udp_standard.zip
 	# Standard TCP
-	Download_File https://wevpn.com/resources/openvpn.bak/TCP.zip /tmp/wevpn_tcp_standard.zip
+	Download_File "$SCRIPT_REPO/wevpn_tcp_standard.zip" /tmp/wevpn_tcp_standard.zip
 	###########
 	
 	wevpnchanged="$(CompareArchiveContents "/tmp/wevpn_udp_standard.zip /tmp/wevpn_tcp_standard.zip")"
@@ -878,7 +879,7 @@ UpdateVPNConfig(){
 	OVPN_ADDR=""
 	
 	if [ "$VPN_PROVIDER" = "NordVPN" ]; then
-		Print_Output true "Retrieving recommended VPN server using NordVPN API with below parameters" "$PASS"
+		Print_Output true "Retrieving recommended VPN server using NordVPN API with below parameters"
 		if [ "$VPN_COUNTRYID" -eq 0 ]; then
 			Print_Output true "Protocol: $VPN_PROT_SHORT - Type: $VPN_TYPE_SHORT" "$PASS"
 			vJSON="$(getRecommendedServers "$VPN_TYPE" "$VPN_PROT" "$VPN_COUNTRYID")"
@@ -984,17 +985,16 @@ UpdateVPNConfig(){
 	
 	if [ "$OVPN_ADDR" = "$EXISTING_ADDR" ] && [ "$OVPN_PORT" = "$EXISTING_PORT" ] && [ "$VPN_PROT_SHORT" = "$EXISTING_PROTO" ]; then
 		Print_Output true "VPN client $VPN_NO server - unchanged" "$WARN"
-		return 1
+	else
+		Print_Output true "Updating VPN client $VPN_NO to new $VPN_PROVIDER server"
 	fi
-	
-	Print_Output true "Updating VPN client $VPN_NO to $VPN_PROVIDER server" "$PASS"
 	
 	if [ -z "$(nvram get vpn_client"$VPN_NO"_addr)" ]; then
 		nvram set vpn_client"$VPN_NO"_adns=3
 		nvram set vpn_client"$VPN_NO"_enforce=1
 		if [ "$(Firmware_Number_Check "$(nvram get buildno)")" -lt "$(Firmware_Number_Check 384.18)" ]; then
 			nvram set vpn_client"$VPN_NO"_clientlist="<DummyVPN>172.16.14.1>0.0.0.0>VPN"
-		else
+		elif [ "$(Firmware_Number_Check "$(nvram get buildno)")" -lt "$(Firmware_Number_Check 386.3)" ]; then
 			nvram set vpn_client"$VPN_NO"_clientlist="<DummyVPN>172.16.14.1>>VPN"
 		fi
 		if ! nvram get vpn_clientx_eas | grep -q "$VPN_NO"; then
@@ -1057,7 +1057,7 @@ UpdateVPNConfig(){
 	else
 		if [ -n "$(nvram get vpn_client"$VPN_NO"_username)" ] && [ -n "$(nvram get vpn_client"$VPN_NO"_password)" ]; then
 			while true; do
-				printf "\\n${BOLD}Do you want to update the username and password for the VPN client? (y/n)${CLEARFORMAT}  "
+				printf "${BOLD}Do you want to update the username and password for the VPN client? (y/n)${CLEARFORMAT}  "
 				read -r confirm
 				case "$confirm" in
 					y|Y)
@@ -1072,6 +1072,7 @@ UpdateVPNConfig(){
 						break
 					;;
 					n|N)
+						printf "\\n"
 						break
 					;;
 					*)
@@ -1121,9 +1122,64 @@ UpdateVPNConfig(){
 	fi
 	
 	if nvram get vpn_clientx_eas | grep -q "$VPN_NO"; then
-		service restart_vpnclient"$VPN_NO" >/dev/null 2>&1
+		RestartVPNClient "$VPN_NO"
+		
+		Print_Output true "Testing that VPN client $VPN_NO is up with a 10s ping test to 1.1.1.1 ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)"
+		tunnelup="false"
+		for i in 1 2 3; do
+			if ping -w 10 -I "tun1$VPN_NO" 1.1.1.1 >/dev/null 2>&1; then
+				tunnelup="true"
+				break
+			else
+				RestartVPNClient "$VPN_NO"
+			fi
+		done
+		
+		retry="false"
+		if [ "$tunnelup" = "false" ]; then
+			Print_Output true "VPN client $VPN_NO did not come up after 3 attempts, please investigate! ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)" "$CRIT"
+			if [ "$ISUNATTENDED" != "true" ]; then
+				while true; do
+					printf "${BOLD}Do you want to vpnmgr to retry? (y/n)${CLEARFORMAT}  "
+					read -r confirm
+					case "$confirm" in
+						y|Y)
+							retry="true"
+							break
+						;;
+						n|N)
+							printf "\\n"
+							break
+						;;
+						*)
+							printf "\\n${BOLD}Please enter a valid choice (y/n)${CLEARFORMAT}\\n"
+						;;
+					esac
+				done
+			fi
+		else
+			Print_Output true "VPN client $VPN_NO is up! ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)" "$PASS"
+		fi
 	fi
-	Print_Output true "VPN client $VPN_NO updated successfully ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)" "$PASS"
+	if [ "$retry" = "false" ]; then
+		Print_Output true "VPN client $VPN_NO updated ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)" "$PASS"
+	else
+		UpdateVPNConfig "$VPN_NO"
+	fi
+}
+
+RestartVPNClient(){
+	Print_Output true "Restarting VPN client $1"
+	service stop_vpnclient"$1" >/dev/null 2>&1
+	sleep 5
+	if [ ! -f /opt/bin/xargs ]; then
+		Print_Output true "Installing findutils from Entware"
+		opkg update
+		opkg install findutils
+	fi
+	ps | grep -v grep | grep -i "openvpn" | grep "client$1" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	service start_vpnclient"$1" >/dev/null 2>&1
+	sleep 5
 }
 
 ManageVPN(){
@@ -1134,7 +1190,7 @@ ManageVPN(){
 		return 1
 	fi
 	
-	Print_Output true "Enabling management of VPN client $VPN_NO" "$PASS"
+	Print_Output true "Enabling management of VPN client $VPN_NO"
 	sed -i 's/^vpn'"$VPN_NO"'_managed.*$/vpn'"$VPN_NO"'_managed=true/' "$SCRIPT_CONF"
 	Print_Output true "Management of VPN client $VPN_NO successfully enabled" "$PASS"
 }
@@ -1142,7 +1198,7 @@ ManageVPN(){
 UnmanageVPN(){
 	VPN_NO="$1"
 	
-	Print_Output true "Removing management of VPN client $VPN_NO" "$PASS"
+	Print_Output true "Removing management of VPN client $VPN_NO"
 	sed -i 's/^vpn'"$VPN_NO"'_managed.*$/vpn'"$VPN_NO"'_managed=false/' "$SCRIPT_CONF"
 	CancelScheduleVPN "$VPN_NO"
 	Print_Output true "Management of VPN client $VPN_NO successfully removed" "$PASS"
@@ -1154,7 +1210,7 @@ ScheduleVPN(){
 	CRU_HOURS="$(grep "vpn${VPN_NO}_schhours" "$SCRIPT_CONF" | cut -f2 -d"=")"
 	CRU_MINUTES="$(grep "vpn${VPN_NO}_schmins" "$SCRIPT_CONF" | cut -f2 -d"=")"
 	
-	Print_Output true "Configuring scheduled update for VPN client $VPN_NO" "$PASS"
+	Print_Output true "Configuring scheduled update for VPN client $VPN_NO"
 	
 	if cru l | grep -q "${SCRIPT_NAME}${VPN_NO}"; then
 		cru d "${SCRIPT_NAME}_VPN${VPN_NO}"
@@ -1179,7 +1235,7 @@ ScheduleVPN(){
 CancelScheduleVPN(){
 	VPN_NO="$1"
 	
-	Print_Output true "Removing scheduled update for VPN client $VPN_NO" "$PASS"
+	Print_Output true "Removing scheduled update for VPN client $VPN_NO"
 		
 	if cru l | grep -q "${SCRIPT_NAME}_VPN${VPN_NO}"; then
 		cru d "${SCRIPT_NAME}_VPN${VPN_NO}"
@@ -1433,6 +1489,7 @@ SetVPNParameters(){
 						break
 					elif [ "$country_select" = "n" ] || [ "$country_select" = "N" ]; then
 						choosecountry="false"
+						printf "\\n"
 						break
 					elif [ "$country_select" = "y" ] || [ "$country_select" = "Y" ]; then
 						choosecountry="true"
@@ -1530,6 +1587,7 @@ SetVPNParameters(){
 								break
 							elif [ "$city_select" = "n" ] || [ "$city_select" = "N" ]; then
 								choosecity="false"
+								printf "\\n"
 								break
 							elif [ "$city_select" = "y" ] || [ "$city_select" = "Y" ]; then
 								choosecity="true"
@@ -1885,22 +1943,22 @@ SetVPNCustomSettings(){
 resolv-retry infinite
 remote-cert-tls server
 ping 15
-ping-restart 0
-ping-timer-rem
+ping-restart 60
 persist-key
 persist-tun
 reneg-sec 0
 fast-io
 disable-occ
 mute-replay-warnings
-auth-nocache
 sndbuf 524288
 rcvbuf 524288
 push "sndbuf 524288"
 push "rcvbuf 524288"
 pull-filter ignore "auth-token"
 pull-filter ignore "ifconfig-ipv6"
-pull-filter ignore "route-ipv6"'
+pull-filter ignore "route-ipv6"
+pull-filter ignore "ping"
+pull-filter ignore "ping-restart"'
 	
 	if [ "$VPN_PROT_SHORT" = "UDP" ]; then
 		vpncustomoptions="$vpncustomoptions
@@ -2210,6 +2268,7 @@ Check_Requirements(){
 		opkg install jq
 		opkg install p7zip
 		opkg install column
+		opkg install findutils
 		return 0
 	else
 		return 1

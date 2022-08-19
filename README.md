@@ -2,7 +2,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/f73bdf3124904744b1844b4099f77bfe)](https://www.codacy.com/gh/jackyaz/vpnmgr/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jackyaz/vpnmgr&amp;utm_campaign=Badge_Grade)
 ![Shellcheck](https://github.com/jackyaz/vpnmgr/actions/workflows/shellcheck.yml/badge.svg)
 
-## v2.3.1
+## v2.3.2
 ### Updated on 2021-08-05
 ## About
 vpnmgr enables easy management of your VPN Client connections for various VPN providers on AsusWRT-Merlin. The following VPN Providers are currently supported: NordVPN, Private Internet Access (PIA) and WeVPN.
