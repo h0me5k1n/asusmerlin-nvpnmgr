@@ -1121,6 +1121,8 @@ UpdateVPNConfig(){
 		rm -f /jffs/openvpn/vpn_crt_client"$VPN_NO"_crl
 	fi
 	
+	retry="false"
+	
 	if nvram get vpn_clientx_eas | grep -q "$VPN_NO"; then
 		RestartVPNClient "$VPN_NO"
 		
@@ -1135,7 +1137,6 @@ UpdateVPNConfig(){
 			fi
 		done
 		
-		retry="false"
 		if [ "$tunnelup" = "false" ]; then
 			Print_Output true "VPN client $VPN_NO did not come up after 3 attempts, please investigate! ($OVPN_HOSTNAME_SHORT $VPN_TYPE_SHORT $VPN_PROT_SHORT)" "$CRIT"
 			if [ "$ISUNATTENDED" != "true" ]; then
