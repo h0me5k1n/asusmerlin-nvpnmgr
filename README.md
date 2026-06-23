@@ -59,6 +59,38 @@ If that doesn't work:
 
 ![CLI UI](https://puu.sh/HevPC/4f5ddfc3d6.png)
 
+## Roadmap
+
+Work progresses in phases. Completed phases are merged to `main`; in-progress work is on feature branches.
+
+- [x] **Phase 1** — Fork merge: jackyaz's v2.3.2 merged back as the new baseline, WeVPN ZIP files removed
+- [x] **Phase 2** — Modular provider architecture: all provider logic extracted to `providers/provider_<name>.sh`; CI smoke test added
+- [ ] **Phase 3** — URL and branding sweep: remaining `jackyaz` references in WebUI files, banner/header update, integrity check
+- [ ] **Phase 4** — WebUI adaptation: ES6 → ES5, dynamic country/city dropdowns from provider data files (not hardcoded JS arrays), provider selection per VPN client
+- [ ] **Phase 5** — Full documentation: provider module authoring guide, contributing guide, updated CLI/WebUI screenshots
+- [ ] **Tooling** — Claude Code agents/skills for scaffolding a new provider module and running provider smoke tests on a live router
+
+## Development
+
+### Installing from a branch
+
+Replace `<branch>` with the branch name (e.g. `feat/phase4-webui`):
+
+```sh
+/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/<branch>/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
+```
+
+To switch a running installation between the stable release and the `develop` branch:
+
+```sh
+vpnmgr switch stable    # pins to main
+vpnmgr switch develop   # pins to develop branch
+```
+
+### Adding a provider
+
+Copy `providers/provider_template.sh` to `providers/provider_<name>.sh` and implement all 17 required functions. The contract is documented in the template header. Run `bash scripts/smoke-test.sh` locally to verify contract completeness before opening a PR — CI enforces this on every push.
+
 ## Credits
 
 - [@jackyaz](https://github.com/jackyaz) — author of the expanded vpnmgr (WebUI, multi-provider, self-update, scheduling). His 429 commits are the backbone of this codebase.
