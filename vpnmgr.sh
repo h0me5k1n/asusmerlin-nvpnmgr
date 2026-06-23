@@ -39,8 +39,7 @@ readonly OVPN_ARCHIVE_DIR="$SCRIPT_DIR/ovpn"
 readonly PROVIDERS_DIR="$SCRIPT_DIR/providers"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
 readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
-readonly SHARED_DIR="/jffs/addons/shared-jy"
-readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
+readonly SCRIPT_WWW_DIR="$SCRIPT_DIR/www"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 GLOBAL_VPN_NO=""
 GLOBAL_VPN_PROVIDER=""
@@ -254,8 +253,8 @@ Update_Version(){
 
 Update_File(){
 	if [ "$1" = "web-assets" ]; then
-		Download_File "$SCRIPT_REPO/www/jquery.js" "$SHARED_DIR/jquery.js"
-		Download_File "$SCRIPT_REPO/www/detect.js" "$SHARED_DIR/detect.js"
+		Download_File "$SCRIPT_REPO/www/jquery.js" "$SCRIPT_WWW_DIR/jquery.js"
+		Download_File "$SCRIPT_REPO/www/detect.js" "$SCRIPT_WWW_DIR/detect.js"
 		Print_Output true "Web assets updated" "$PASS"
 	elif [ "$1" = "vpnmgr_www.asp" ]; then
 		tmpfile="/tmp/$1"
@@ -514,8 +513,8 @@ Create_Dirs(){
 		mkdir -p "$PROVIDERS_DIR"
 	fi
 
-	if [ ! -d "$SHARED_DIR" ]; then
-		mkdir -p "$SHARED_DIR"
+	if [ ! -d "$SCRIPT_WWW_DIR" ]; then
+		mkdir -p "$SCRIPT_WWW_DIR"
 	fi
 	
 	if [ ! -d "$SCRIPT_WEBPAGE_DIR" ]; then
@@ -538,8 +537,8 @@ Create_Symlinks(){
 	ln -s /tmp/detect_vpnmgr.js "$SCRIPT_WEB_DIR/detect_vpnmgr.js" 2>/dev/null
 	ln -s /tmp/vpnmgrserverloads "$SCRIPT_WEB_DIR/vpnmgrserverloads.js" 2>/dev/null
 	
-	if [ ! -d "$SHARED_WEB_DIR" ]; then
-		ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
+	if [ ! -d "$SCRIPT_WEB_DIR/www" ]; then
+		ln -s "$SCRIPT_WWW_DIR" "$SCRIPT_WEB_DIR/www" 2>/dev/null
 	fi
 }
 
