@@ -1,12 +1,18 @@
-on: push
+# Superseded by ci.yml — shellcheck is now run as part of scripts/smoke-test.sh.
+# Kept as a manual trigger only to avoid breaking any external references.
+on:
+  workflow_dispatch:
 
-name: 'ShellCheck'
+name: ShellCheck (legacy)
 
 jobs:
   shellcheck:
     name: Shellcheck
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@master
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          severity: warning
+          additional_files: providers/*.sh
