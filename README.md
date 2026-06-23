@@ -32,7 +32,7 @@ Merlin 384.15/384.13_4 or Fork 43E5 (or later) — [Asuswrt-Merlin](https://asus
 Using your preferred SSH client/terminal:
 
 ```sh
-/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/master/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
+/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/main/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
 ```
 
 > **Note:** This repo is being renamed from `asusmerlin-nvpnmgr` to `vpnmgr` on GitHub. The installation URL will update accordingly — GitHub will redirect the old URL automatically.

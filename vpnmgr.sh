@@ -30,7 +30,7 @@
 ### Start of script variables ###
 readonly SCRIPT_NAME="vpnmgr"
 readonly SCRIPT_VERSION="v2.3.2"
-SCRIPT_BRANCH="master"
+SCRIPT_BRANCH="main"
 SCRIPT_REPO="https://raw.githubusercontent.com/h0me5k1n/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_CONF="$SCRIPT_DIR/config"
@@ -2313,7 +2313,7 @@ case "$1" in
 		exit 0
 	;;
 	stable)
-		SCRIPT_BRANCH="master"
+		SCRIPT_BRANCH="main"
 		SCRIPT_REPO="https://raw.githubusercontent.com/h0me5k1n/$SCRIPT_NAME/$SCRIPT_BRANCH"
 		Update_Version force
 		exit 0
