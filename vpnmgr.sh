@@ -40,7 +40,6 @@ readonly PROVIDERS_DIR="$SCRIPT_DIR/providers"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
 readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
 readonly SHARED_DIR="/jffs/addons/shared-jy"
-readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
 readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 GLOBAL_VPN_NO=""
@@ -208,7 +207,7 @@ Update_Version(){
 			read -r confirm
 			case "$confirm" in
 				y|Y)
-					Update_File shared-jy.tar.gz
+					Update_File web-assets
 					Update_File vpnmgr_www.asp
 					printf "\\n"
 					/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
@@ -236,7 +235,7 @@ Update_Version(){
 	if [ "$1" = "force" ]; then
 		serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
-		Update_File shared-jy.tar.gz
+		Update_File web-assets
 		Update_File vpnmgr_www.asp
 		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 		chmod 0755 "/jffs/scripts/$SCRIPT_NAME_LOWER"
@@ -254,24 +253,10 @@ Update_Version(){
 }
 
 Update_File(){
-	if [ "$1" = "shared-jy.tar.gz" ]; then
-		if [ ! -f "$SHARED_DIR/$1.md5" ]; then
-			Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
-			Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
-			tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
-			rm -f "$SHARED_DIR/$1"
-			Print_Output true "New version of $1 downloaded" "$PASS"
-		else
-			localmd5="$(cat "$SHARED_DIR/$1.md5")"
-			remotemd5="$(curl -fsL --retry 3 "$SHARED_REPO/$1.md5")"
-			if [ "$localmd5" != "$remotemd5" ]; then
-				Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
-				Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
-				tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
-				rm -f "$SHARED_DIR/$1"
-				Print_Output true "New version of $1 downloaded" "$PASS"
-			fi
-		fi
+	if [ "$1" = "web-assets" ]; then
+		Download_File "$SCRIPT_REPO/www/jquery.js" "$SHARED_DIR/jquery.js"
+		Download_File "$SCRIPT_REPO/www/detect.js" "$SHARED_DIR/detect.js"
+		Print_Output true "Web assets updated" "$PASS"
 	elif [ "$1" = "vpnmgr_www.asp" ]; then
 		tmpfile="/tmp/$1"
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
@@ -1996,7 +1981,7 @@ Menu_Install(){
 	Auto_ServiceEvent create 2>/dev/null
 	
 	Update_File vpnmgr_www.asp
-	Update_File shared-jy.tar.gz
+	Update_File web-assets
 
 	Install_Providers
 	Refresh_Provider_Cache
