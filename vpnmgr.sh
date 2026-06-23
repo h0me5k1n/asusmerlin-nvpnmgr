@@ -11,6 +11,7 @@
 ##                                                   ##
 ##       https://github.com/h0me5k1n/vpnmgr          ##
 ##     Originally by h0me5k1n, expanded by jackyaz   ##
+##     Revived and maintained by h0me5k1n            ##
 #######################################################
 
 ##########         Shellcheck directives     ##########
