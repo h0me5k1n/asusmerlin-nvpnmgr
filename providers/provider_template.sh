@@ -1,6 +1,7 @@
 #!/bin/sh
-# Provider module template for vpnmgr
-# Copy this file and replace TEMPLATE with the provider name (lowercase).
+# Provider: TEMPLATE
+# Status: TEMPLATE
+# Description: Copy this file to providers/provider_<name>.sh and implement all functions.
 # All functions must be implemented — stubs return error by default.
 #
 # Naming convention: provider_PROVIDERNAME_FUNCTION

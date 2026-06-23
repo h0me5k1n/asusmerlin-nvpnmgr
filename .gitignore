@@ -1,2 +1,8 @@
 *.tags
 *.tags1
+
+# Provider config files — must never be committed; download at runtime to /tmp/
+*.ovpn
+*.zip
+*.p12
+*.pem

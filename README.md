@@ -1,6 +1,6 @@
 # vpnmgr
 
-![Shellcheck](https://github.com/h0me5k1n/asusmerlin-nvpnmgr/actions/workflows/shellcheck.yml/badge.svg)
+![CI](https://github.com/h0me5k1n/asusmerlin-nvpnmgr/actions/workflows/ci.yml/badge.svg)
 
 VPN client manager for AsusWRT-Merlin routers.
 
