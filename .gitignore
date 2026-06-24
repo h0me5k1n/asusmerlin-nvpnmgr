@@ -6,3 +6,11 @@
 *.zip
 *.p12
 *.pem
+*.crt
+openvpn/
+
+# Development scaffolding — superseded by .claude/
+vpnmgr-scaffold/
+
+# Session handoff/scratch files
+vpnmgr-vscode-handoff.md
