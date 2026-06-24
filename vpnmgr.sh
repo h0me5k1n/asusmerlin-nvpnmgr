@@ -1113,34 +1113,35 @@ SetVPNParameters(){
 		fi
 		while true; do
 			printf "\\n${BOLD}Please select a VPN provider:${CLEARFORMAT}\\n"
-			printf "    1. NordVPN\\n"
-			printf "    2. Private Internet Access (PIA)\\n"
-			printf "    3. WeVPN\\n\\n"
-			printf "Choose an option:  "
+			_provcnt=0
+			_provconfigs=""
+			for _pf in "$PROVIDERS_DIR"/provider_*.sh; do
+				[ -f "$_pf" ] || continue
+				_pstatus="$(sed -n '3p' "$_pf")"
+				case "$_pstatus" in *DEPRECATED*|*UNMAINTAINED*|*TEMPLATE*) continue ;; esac
+				_pdisplay="$(grep '^# Display:' "$_pf" | cut -c12-)"
+				_pconfig="$(grep '^# Config:' "$_pf" | cut -c11-)"
+				[ -z "$_pdisplay" ] || [ -z "$_pconfig" ] && continue
+				_provcnt=$((_provcnt + 1))
+				printf "    %d. %s\\n" "$_provcnt" "$_pdisplay"
+				_provconfigs="${_provconfigs}${_pconfig}
+"
+			done
+			printf "\\nChoose an option:  "
 			read -r provmenu
-			
 			case "$provmenu" in
-				1)
-					vpnprovider="NordVPN"
-					printf "\\n"
-					break
-				;;
-				2)
-					vpnprovider="PIA"
-					printf "\\n"
-					break
-				;;
-				3)
-					vpnprovider="WeVPN"
-					printf "\\n"
-					break
-				;;
 				e)
 					exitmenu="exit"
 					break
 				;;
 				*)
-					printf "\\n\\e[31mPlease enter a valid choice (1-2)${CLEARFORMAT}\\n"
+					if Validate_Number "$provmenu" && [ "$provmenu" -ge 1 ] && [ "$provmenu" -le "$_provcnt" ]; then
+						vpnprovider="$(printf '%s' "$_provconfigs" | sed -n "${provmenu}p")"
+						printf "\\n"
+						break
+					else
+						printf "\\n\\e[31mPlease enter a valid choice (1-%s)${CLEARFORMAT}\\n" "$_provcnt"
+					fi
 				;;
 			esac
 		done

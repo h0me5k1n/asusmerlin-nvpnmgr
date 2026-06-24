@@ -1,6 +1,8 @@
 #!/bin/sh
 # Provider: TEMPLATE
 # Status: TEMPLATE
+# Display: <Provider Full Name>
+# Config: <ProviderKey>   (must lowercase to the provider module name, e.g. "NordVPN" → module "nordvpn")
 # Description: Copy this file to providers/provider_<name>.sh and implement all functions.
 # All functions must be implemented — stubs return error by default.
 #

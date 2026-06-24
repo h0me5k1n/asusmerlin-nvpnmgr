@@ -1,6 +1,8 @@
 #!/bin/sh
 # NordVPN provider module for vpnmgr
 # Status: ACTIVE
+# Display: NordVPN
+# Config: NordVPN
 #
 # Depends on: jq, curl
 # Cache file: $SCRIPT_DIR/nordvpn_countrydata  (JSON array from NordVPN API)
