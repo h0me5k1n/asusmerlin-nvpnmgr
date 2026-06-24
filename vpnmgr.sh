@@ -237,7 +237,7 @@ Update_Version(){
 		Update_File web-assets
 		Update_File vpnmgr_www.asp
 		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
-		chmod 0755 "/jffs/scripts/$SCRIPT_NAME_LOWER"
+		chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 		Set_Version_Custom_Settings local "$serverver"
 		Set_Version_Custom_Settings server "$serverver"
 		Clear_Lock
