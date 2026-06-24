@@ -101,6 +101,10 @@ Run `bash scripts/smoke-test.sh` locally before opening a PR — CI enforces thi
 
 All `.sh` files must be **busybox ash compatible**. No bash arrays, no `[[ ]]`, no `let`, no `declare`, no process substitution. The router does not have bash.
 
+## Known limitations
+
+- **NordVPN OVPN format**: vpnmgr downloads OVPN files from NordVPN's CDN, which still serves the v1 format (tls-auth, multiple `remote` lines). NordVPN's newer v2.6 format (tls-crypt, single `remote`) is only available via manual download from the NordVPN portal — no programmatic per-server URL is known. The v1 CDN files work correctly; upgrading to v2.6 would require NordVPN to expose an API endpoint for per-server downloads.
+
 ## Roadmap
 
 - [x] **Phase 1** — Fork merge: jackyaz's v2.3.2 merged as the new baseline; WeVPN ZIP files removed
