@@ -1315,13 +1315,7 @@ SetVPNParameters(){
 			COUNTCITIES="$(printf '%s\n' "$LISTCITIES" | wc -l)"
 			while true; do
 				printf "\\n${BOLD}Please select a city:${CLEARFORMAT}\\n"
-				COUNTER=1
-				IFS="$(printf '\n')"
-				for CITY in $LISTCITIES; do
-					printf "    %s. %s\\n" "$COUNTER" "$CITY"
-					COUNTER=$((COUNTER+1))
-				done
-				unset IFS
+				printf '%s\n' "$LISTCITIES" | awk '{ printf "  %3d. %s\n", NR, $0 }'
 
 				printf "\\nChoose an option:  "
 				read -r city_choice
