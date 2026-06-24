@@ -1,9 +1,16 @@
 #!/bin/sh
 # PIA (Private Internet Access) provider module for vpnmgr
-# Status: UNMAINTAINED — extracted from jackyaz's vpnmgr v2.3.2
+# Status: UNTESTED — rewritten to use PIA JSON API; not yet verified on a live account
 #
-# Depends on: 7za (p7zip), curl
-# Cache files: $OVPN_ARCHIVE_DIR/pia_*.zip, $SCRIPT_DIR/pia_countrydata
+# Depends on: jq, curl
+# Cache files: $SCRIPT_DIR/pia_serverdata  (JSON from serverlist.piaservers.net)
+#              $SCRIPT_DIR/pia_crl.pem     (CRL from privateinternetaccess.com)
+#
+# Status values (line 3 of every provider file — read by scripts/provider-test.sh):
+#   ACTIVE       — provider is maintained and its API is operational
+#   UNMAINTAINED — provider was functional but is no longer actively maintained
+#   DEPRECATED   — provider service is offline; only static tests run
+#   TEMPLATE     — not a real provider; provider-test.sh will exit immediately
 
 ##########         Shellcheck directives     ##########
 # shellcheck disable=SC2039
@@ -11,160 +18,318 @@
 #######################################################
 
 provider_pia_version(){
-	printf "v1.0.0\n"
+	printf "v2.0.0\n"
 }
 
-# Internal: translate country name to PIA country code prefix
-_pia_sed_country_codes_destructive(){
-	sed 's/ /_/g;s/^AU_.*/Australia/I;s/^CA_.*/Canada/I;s/^DE_.*/Germany/I;s/^UAE_.*/United Arab Emirates/I;s/^UK_.*/United Kingdom/I;s/^US_.*/United States/I;
-s/^AE_.*/United Arab Emirates/I;s/^GB_.*/United Kingdom/I;s/^AT_.*/Austria/I;s/^BE_.*/Belgium/I;s/^BG_.*/Bulgaria/I;s/^BR_.*/Brazil/I;
-s/^CH_.*/Switzerland/I;s/^CZ_.*/Czech Republic/I;s/^DK_.*/Denmark/I;s/^ES_.*/Spain/I;s/^FR_.*/France/I;s/^HK_.*/Hong Kong/I;s/^HU_.*/Hungary/I;
-s/^IE_.*/Ireland/I;s/^IL_.*/Israel/I;s/^IN_.*/India/I;s/^IT_.*/Italy/I;s/^JP_.*/Japan/I;s/^MX_.*/Mexico/I;s/^NL_.*/Netherlands/I;s/^NO_.*/Norway/I;s/^NZ_.*/New Zealand/I;
-s/^PL_.*/Poland/I;s/^RO_.*/Romania/I;s/^RS_.*/Serbia/I;s/^SE_.*/Sweden/I;s/^SG_.*/Singapore/I;s/^ZA_.*/South Africa/I;s/_/ /g;'
-}
-
-_pia_sed_country_codes(){
-	sed 's/ /_/g;s/^AU_/Australia/I;s/^CA_/Canada/I;s/^DE_/Germany/I;s/^UAE_/United Arab Emirates/I;s/^UK_/United Kingdom/I;s/^US_/United States/I;
-s/^AE_/United Arab Emirates/I;s/^GB_/United Kingdom/I;s/^AT_/Austria/I;s/^BE_/Belgium/I;s/^BG_/Bulgaria/I;s/^BR_/Brazil/I;
-s/^CH_/Switzerland/I;s/^CZ_/Czech Republic/I;s/^DK_/Denmark/I;s/^ES_/Spain/I;s/^FR_/France/I;s/^HK_/Hong Kong/I;s/^HU_/Hungary/I;
-s/^IE_/Ireland/I;s/^IL_/Israel/I;s/^IN_/India/I;s/^IT_/Italy/I;s/^JP_/Japan/I;s/^MX_/Mexico/I;s/^NL_/Netherlands/I;s/^NO_/Norway/I;s/^NZ_/New Zealand/I;
-s/^PL_/Poland/I;s/^RO_/Romania/I;s/^RS_/Serbia/I;s/^SE_/Sweden/I;s/^SG_/Singapore/I;s/^ZA_/South Africa/I;s/_/ /g;'
-}
-
-_pia_sed_reverse_country_codes(){
-	sed 's/Australia/AU/;s/Canada/CA/;s/Germany/DE/;s/United Kingdom/UK/;s/United States/US/;'
+# Internal: map ISO-3166-1 alpha-2 code → display name for all 91 PIA countries.
+_pia_country_name(){
+	case "$1" in
+		AD) printf "Andorra" ;;
+		AE) printf "United Arab Emirates" ;;
+		AL) printf "Albania" ;;
+		AM) printf "Armenia" ;;
+		AR) printf "Argentina" ;;
+		AT) printf "Austria" ;;
+		AU) printf "Australia" ;;
+		BA) printf "Bosnia and Herzegovina" ;;
+		BD) printf "Bangladesh" ;;
+		BE) printf "Belgium" ;;
+		BG) printf "Bulgaria" ;;
+		BO) printf "Bolivia" ;;
+		BR) printf "Brazil" ;;
+		BS) printf "Bahamas" ;;
+		CA) printf "Canada" ;;
+		CH) printf "Switzerland" ;;
+		CL) printf "Chile" ;;
+		CN) printf "China" ;;
+		CO) printf "Colombia" ;;
+		CR) printf "Costa Rica" ;;
+		CY) printf "Cyprus" ;;
+		CZ) printf "Czech Republic" ;;
+		DE) printf "Germany" ;;
+		DK) printf "Denmark" ;;
+		DZ) printf "Algeria" ;;
+		EC) printf "Ecuador" ;;
+		EE) printf "Estonia" ;;
+		EG) printf "Egypt" ;;
+		ES) printf "Spain" ;;
+		FI) printf "Finland" ;;
+		FR) printf "France" ;;
+		GB) printf "United Kingdom" ;;
+		GE) printf "Georgia" ;;
+		GL) printf "Greenland" ;;
+		GR) printf "Greece" ;;
+		GT) printf "Guatemala" ;;
+		HK) printf "Hong Kong" ;;
+		HR) printf "Croatia" ;;
+		HU) printf "Hungary" ;;
+		ID) printf "Indonesia" ;;
+		IE) printf "Ireland" ;;
+		IL) printf "Israel" ;;
+		IM) printf "Isle of Man" ;;
+		IN) printf "India" ;;
+		IS) printf "Iceland" ;;
+		IT) printf "Italy" ;;
+		JP) printf "Japan" ;;
+		KH) printf "Cambodia" ;;
+		KR) printf "South Korea" ;;
+		KZ) printf "Kazakhstan" ;;
+		LI) printf "Liechtenstein" ;;
+		LK) printf "Sri Lanka" ;;
+		LT) printf "Lithuania" ;;
+		LU) printf "Luxembourg" ;;
+		LV) printf "Latvia" ;;
+		MA) printf "Morocco" ;;
+		MC) printf "Monaco" ;;
+		MD) printf "Moldova" ;;
+		ME) printf "Montenegro" ;;
+		MK) printf "North Macedonia" ;;
+		MN) printf "Mongolia" ;;
+		MO) printf "Macao" ;;
+		MT) printf "Malta" ;;
+		MX) printf "Mexico" ;;
+		MY) printf "Malaysia" ;;
+		NG) printf "Nigeria" ;;
+		NL) printf "Netherlands" ;;
+		NO) printf "Norway" ;;
+		NP) printf "Nepal" ;;
+		NZ) printf "New Zealand" ;;
+		PA) printf "Panama" ;;
+		PE) printf "Peru" ;;
+		PH) printf "Philippines" ;;
+		PL) printf "Poland" ;;
+		PT) printf "Portugal" ;;
+		QA) printf "Qatar" ;;
+		RO) printf "Romania" ;;
+		RS) printf "Serbia" ;;
+		SA) printf "Saudi Arabia" ;;
+		SE) printf "Sweden" ;;
+		SG) printf "Singapore" ;;
+		SI) printf "Slovenia" ;;
+		SK) printf "Slovakia" ;;
+		TR) printf "Turkey" ;;
+		TW) printf "Taiwan" ;;
+		UA) printf "Ukraine" ;;
+		US) printf "United States" ;;
+		UY) printf "Uruguay" ;;
+		VE) printf "Venezuela" ;;
+		VN) printf "Vietnam" ;;
+		ZA) printf "South Africa" ;;
+		*)  printf "%s" "$1" ;;
+	esac
 }
 
 # provider_pia_get_server country_id country_name city_id city_name protocol vpn_type
-# Returns the OVPN filename stem (without .ovpn extension).
+# country_id: ISO code (e.g. "GB")   city_id: API region id (e.g. "uk")
+# Returns the region's dns hostname (e.g. "uk-london.privacy.network").
 provider_pia_get_server(){
-	_ps_countryname="$2"
-	_ps_cityname="$4"
+	_ps_countryid="$1"
+	_ps_cityid="$3"
+	_psd="$SCRIPT_DIR/pia_serverdata"
 
-	_ps_stem="$(printf '%s' "$_ps_countryname" | _pia_sed_reverse_country_codes)"
-	if [ -n "$_ps_cityname" ]; then
-		_ps_stem="${_ps_stem}_${_ps_cityname}"
+	if [ ! -f "$_psd" ]; then
+		Print_Output true "PIA: Server data missing — run refreshcacheddata" "$ERR"
+		return 1
 	fi
-	_ps_stem="$(printf '%s' "$_ps_stem" | tr 'A-Z' 'a-z' | sed 's/ /_/g')"
-	printf '%s' "$_ps_stem"
+
+	if [ -n "$_ps_cityid" ] && [ "$_ps_cityid" != "0" ]; then
+		jq -r --arg id "$_ps_cityid" \
+			'.regions[] | select(.id == $id) | .dns' \
+			"$_psd"
+	else
+		jq -r --arg c "$_ps_countryid" \
+			'.regions[] | select(.country == $c and .offline == false) | .dns' \
+			"$_psd" | head -1
+	fi
 }
 
-# provider_pia_get_ovpn filename_stem protocol vpn_type
-# Extracts OVPN from the appropriate ZIP archive and prints to stdout.
+# provider_pia_get_ovpn dns_hostname protocol vpn_type
+# Constructs and prints a complete OVPN config.
+# The CA cert is embedded; the CRL is read from the cached pia_crl.pem file.
 provider_pia_get_ovpn(){
-	_po_stem="$1"
+	_po_host="$1"
 	_po_prot="$2"
 	_po_type="$3"
-	_po_prot_lc="$(printf '%s' "$_po_prot" | tr 'A-Z' 'a-z')"
-	_po_type_lc="$(printf '%s' "$_po_type" | tr 'A-Z' 'a-z')"
-	_po_archive="$OVPN_ARCHIVE_DIR/pia_${_po_prot_lc}_${_po_type_lc}.zip"
+	_po_crl="$SCRIPT_DIR/pia_crl.pem"
 
-	if [ ! -f "$_po_archive" ]; then
-		Print_Output true "PIA: Archive not found: $_po_archive" "$ERR"
-		return 1
+	case "$_po_prot" in
+		TCP) _po_proto="tcp"; _po_port="502"  ;;
+		*)   _po_proto="udp"; _po_port="1198" ;;
+	esac
+
+	case "$_po_type" in
+		Strong) _po_cipher="aes-256-cbc"; _po_auth="sha256" ;;
+		*)      _po_cipher="aes-128-cbc"; _po_auth="sha1"   ;;
+	esac
+
+	cat <<OVPN
+client
+dev tun
+proto ${_po_proto}
+remote ${_po_host} ${_po_port}
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+cipher ${_po_cipher}
+auth ${_po_auth}
+tls-client
+remote-cert-tls server
+auth-user-pass
+compress
+verb 1
+reneg-sec 0
+<ca>
+-----BEGIN CERTIFICATE-----
+MIIFqzCCBJOgAwIBAgIJAKZ7D5Yv87qDMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD
+VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV
+BAoTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIElu
+dGVybmV0IEFjY2VzczEgMB4GA1UEAxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3Mx
+IDAeBgNVBCkTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkB
+FiBzZWN1cmVAcHJpdmF0ZWludGVybmV0YWNjZXNzLmNvbTAeFw0xNDA0MTcxNzM1
+MThaFw0zNDA0MTIxNzM1MThaMIHoMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
+EzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNVBAoTF1ByaXZhdGUgSW50ZXJuZXQg
+QWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UE
+AxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBCkTF1ByaXZhdGUgSW50
+ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkBFiBzZWN1cmVAcHJpdmF0ZWludGVy
+bmV0YWNjZXNzLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPXD
+L1L9tX6DGf36liA7UBTy5I869z0UVo3lImfOs/GSiFKPtInlesP65577nd7UNzzX
+lH/P/CnFPdBWlLp5ze3HRBCc/Avgr5CdMRkEsySL5GHBZsx6w2cayQ2EcRhVTwWp
+cdldeNO+pPr9rIgPrtXqT4SWViTQRBeGM8CDxAyTopTsobjSiYZCF9Ta1gunl0G/
+8Vfp+SXfYCC+ZzWvP+L1pFhPRqzQQ8k+wMZIovObK1s+nlwPaLyayzw9a8sUnvWB
+/5rGPdIYnQWPgoNlLN9HpSmsAcw2z8DXI9pIxbr74cb3/HSfuYGOLkRqrOk6h4RC
+OfuWoTrZup1uEOn+fw8CAwEAAaOCAVQwggFQMB0GA1UdDgQWBBQv63nQ/pJAt5tL
+y8VJcbHe22ZOsjCCAR8GA1UdIwSCARYwggESgBQv63nQ/pJAt5tLy8VJcbHe22ZO
+sqGB7qSB6zCB6DELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRMwEQYDVQQHEwpM
+b3NBbmdlbGVzMSAwHgYDVQQKExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4G
+A1UECxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBAMTF1ByaXZhdGUg
+SW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQpExdQcml2YXRlIEludGVybmV0IEFjY2Vz
+czEvMC0GCSqGSIb3DQEJARYgc2VjdXJlQHByaXZhdGVpbnRlcm5ldGFjY2Vzcy5j
+b22CCQCmew+WL/O6gzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBDQUAA4IBAQAn
+a5PgrtxfwTumD4+3/SYvwoD66cB8IcK//h1mCzAduU8KgUXocLx7QgJWo9lnZ8xU
+ryXvWab2usg4fqk7FPi00bED4f4qVQFVfGfPZIH9QQ7/48bPM9RyfzImZWUCenK3
+7pdw4Bvgoys2rHLHbGen7f28knT2j/cbMxd78tQc20TIObGjo8+ISTRclSTRBtyC
+GohseKYpTS9himFERpUgNtefvYHbn70mIOzfOJFTVqfrptf9jXa9N8Mpy3ayfodz
+1wiqdteqFXkTYoSDctgKMiZ6GdocK9nMroQipIQtpnwd4yBDWIyC6Bvlkrq5TQUt
+YDQ8z9v+DMO6iwyIDRiU
+-----END CERTIFICATE-----
+</ca>
+OVPN
+
+	if [ -f "$_po_crl" ]; then
+		printf '<crl-verify>\n'
+		cat "$_po_crl"
+		printf '</crl-verify>\n'
 	fi
 
-	/opt/bin/7za e -bsp0 -bso0 "$_po_archive" -o/tmp "${_po_stem}.ovpn"
-	if [ ! -f "/tmp/${_po_stem}.ovpn" ]; then
-		Print_Output true "PIA: Could not extract ${_po_stem}.ovpn from archive" "$ERR"
-		return 1
-	fi
-	cat "/tmp/${_po_stem}.ovpn"
-	rm -f "/tmp/${_po_stem}.ovpn"
+	printf 'disable-occ\n'
 }
 
 # provider_pia_get_comp
 provider_pia_get_comp(){
-	printf "no"
+	printf "adaptive"
 }
 
 # provider_pia_get_hmac
 provider_pia_get_hmac(){
-	printf "1"
+	printf "0"
 }
 
 # provider_pia_get_short_name server_id addr
-# PIA uses the IP address as the identifier rather than a hostname.
+# Returns the hostname prefix as a short label (e.g. "uk-london" from "uk-london.privacy.network").
 provider_pia_get_short_name(){
-	_sn_addr="$2"
-	if printf '%s' "$_sn_addr" | grep -q "-"; then
-		printf '%s' "$_sn_addr" | cut -f1 -d'.' \
-			| awk '{print toupper(substr($0,0,2))tolower(substr($0,3))}'
-	else
-		printf '%s' "$_sn_addr" | cut -f1 -d'.' \
-			| awk '{print toupper(substr($0,0,1))tolower(substr($0,2))}'
-	fi
+	printf '%s' "$1" | cut -d'.' -f1
 }
 
 # provider_pia_write_certs vpn_no ovpn_detail
-# Writes ca + crl; removes static, key, crt.
+# Writes CA cert and CRL; removes unused cert files.
 provider_pia_write_certs(){
 	_wc_no="$1"
 	_wc_ovpn="$2"
 
 	_wc_ca="$(printf '%s' "$_wc_ovpn" | awk '/<ca>/{flag=1;next}/<\/ca>/{flag=0}flag' | sed '/^#/ d')"
-	[ -z "$_wc_ca" ] && Print_Output true "PIA: Error determining CA certificate" "$ERR" && return 1
+	[ -z "$_wc_ca" ] && Print_Output true "PIA: Error extracting CA certificate" "$ERR" && return 1
+
+	printf '%s\n' "$_wc_ca" > /jffs/openvpn/vpn_crt_client"${_wc_no}"_ca
 
 	_wc_crl="$(printf '%s' "$_wc_ovpn" | awk '/<crl-verify>/{flag=1;next}/<\/crl-verify>/{flag=0}flag' | sed '/^#/ d')"
-	[ -z "$_wc_crl" ] && Print_Output true "PIA: Error determining CRL" "$ERR" && return 1
+	if [ -n "$_wc_crl" ]; then
+		printf '%s\n' "$_wc_crl" > /jffs/openvpn/vpn_crt_client"${_wc_no}"_crl
+	else
+		rm -f /jffs/openvpn/vpn_crt_client"${_wc_no}"_crl
+	fi
 
-	printf '%s\n' "$_wc_ca"  > /jffs/openvpn/vpn_crt_client"${_wc_no}"_ca
-	printf '%s\n' "$_wc_crl" > /jffs/openvpn/vpn_crt_client"${_wc_no}"_crl
 	rm -f /jffs/openvpn/vpn_crt_client"${_wc_no}"_static
 	rm -f /jffs/openvpn/vpn_crt_client"${_wc_no}"_key
 	rm -f /jffs/openvpn/vpn_crt_client"${_wc_no}"_crt
 }
 
 # provider_pia_get_country_names
-# Reads pia_countrydata (flat list of OVPN stems), decodes country names.
+# Returns a sorted, deduplicated list of country display names.
 provider_pia_get_country_names(){
-	_pcd="$SCRIPT_DIR/pia_countrydata"
-	if [ ! -f "$_pcd" ]; then
-		Print_Output true "PIA: Country data cache missing — run refreshcacheddata" "$ERR"
+	_psd="$SCRIPT_DIR/pia_serverdata"
+	if [ ! -f "$_psd" ]; then
+		Print_Output true "PIA: Server data missing — run refreshcacheddata" "$ERR"
 		return 1
 	fi
-	cat "$_pcd" | _pia_sed_country_codes_destructive \
-		| awk '{$1=$1;print}' \
-		| awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1' \
-		| sort -u
+	jq -r '[.regions[] | select(.offline == false) | .country] | unique | .[]' "$_psd" \
+		| while IFS= read -r _code; do
+			_pia_country_name "$_code"
+			printf '\n'
+		done | sort -u
 }
 
 # provider_pia_get_country_id country_name
-# PIA does not use numeric country IDs.
+# Returns the ISO code for the given display name (e.g. "United Kingdom" → "GB").
 provider_pia_get_country_id(){
-	printf "0"
+	for _code in AD AE AL AM AR AT AU BA BD BE BG BO BR BS CA CH CL CN CO CR CY CZ DE \
+	             DK DZ EC EE EG ES FI FR GB GE GL GR GT HK HR HU ID IE IL IM IN IS IT \
+	             JP KH KR KZ LI LK LT LU LV MA MC MD ME MK MN MO MT MX MY NG NL NO NP \
+	             NZ PA PE PH PL PT QA RO RS SA SE SG SI SK TR TW UA US UY VE VN ZA; do
+		if [ "$(_pia_country_name "$_code")" = "$1" ]; then
+			printf '%s' "$_code"
+			return 0
+		fi
+	done
 }
 
 # provider_pia_get_city_count country_name
 provider_pia_get_city_count(){
-	_pcd="$SCRIPT_DIR/pia_countrydata"
-	cat "$_pcd" | _pia_sed_country_codes_destructive | sort | grep -c "$1"
+	_psd="$SCRIPT_DIR/pia_serverdata"
+	_cid="$(provider_pia_get_country_id "$1")"
+	jq -r --arg c "$_cid" \
+		'[.regions[] | select(.country == $c and .offline == false)] | length' \
+		"$_psd"
 }
 
 # provider_pia_get_city_names country_name
+# Returns PIA region names for the given country (e.g. "UK London", "UK Manchester").
 provider_pia_get_city_names(){
-	_pcd="$SCRIPT_DIR/pia_countrydata"
-	cat "$_pcd" | _pia_sed_country_codes | grep "$1" \
-		| sed "s/$1//" \
-		| awk '{$1=$1;print}' \
-		| awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1' \
-		| sort
+	_psd="$SCRIPT_DIR/pia_serverdata"
+	_cid="$(provider_pia_get_country_id "$1")"
+	jq -r --arg c "$_cid" \
+		'.regions[] | select(.country == $c and .offline == false) | .name' \
+		"$_psd" | sort
 }
 
 # provider_pia_get_city_id country_name city_name
-# PIA does not use numeric city IDs.
+# Returns the API region id (e.g. "uk") for the given region name.
 provider_pia_get_city_id(){
-	printf "0"
+	_psd="$SCRIPT_DIR/pia_serverdata"
+	_cid="$(provider_pia_get_country_id "$1")"
+	jq -r --arg c "$_cid" --arg n "$2" \
+		'.regions[] | select(.country == $c and .name == $n) | .id' \
+		"$_psd"
 }
 
 # provider_pia_country_required
-# Returns 0 — country selection is required for PIA.
+# Returns 0 — country selection is required.
 provider_pia_country_required(){
 	return 0
 }
 
 # provider_pia_city_required
-# Returns 0 — city selection is required for PIA.
+# Returns 0 — region/city selection is required to identify a specific endpoint.
 provider_pia_city_required(){
 	return 0
 }
@@ -175,49 +340,44 @@ provider_pia_get_types(){
 }
 
 # provider_pia_get_server_load desc
-# Not supported by PIA.
+# Not available via PIA API.
 provider_pia_get_server_load(){
 	printf ""
 }
 
 # provider_pia_refresh_cache
-# Downloads 4 PIA ZIP archives, compares with cached copies, updates pia_countrydata.
+# Downloads the PIA server list and the CRL.
+# The server list API appends a detached signature after a blank line — strip it.
 provider_pia_refresh_cache(){
-	Print_Output true "PIA: Refreshing OpenVPN file archives..."
+	Print_Output true "PIA: Refreshing server data..."
+	_psd="$SCRIPT_DIR/pia_serverdata"
+	_pcrl="$SCRIPT_DIR/pia_crl.pem"
+	_tmp_data="/tmp/pia_serverdata_$$"
+	_tmp_crl="/tmp/pia_crl_$$.pem"
 
 	/usr/sbin/curl -fsL --retry 3 \
-		https://www.privateinternetaccess.com/openvpn/openvpn.zip \
-		-o /tmp/pia_udp_standard.zip
-	/usr/sbin/curl -fsL --retry 3 \
-		https://www.privateinternetaccess.com/openvpn/openvpn-tcp.zip \
-		-o /tmp/pia_tcp_standard.zip
-	/usr/sbin/curl -fsL --retry 3 \
-		https://www.privateinternetaccess.com/openvpn/openvpn-strong.zip \
-		-o /tmp/pia_udp_strong.zip
-	/usr/sbin/curl -fsL --retry 3 \
-		https://www.privateinternetaccess.com/openvpn/openvpn-strong-tcp.zip \
-		-o /tmp/pia_tcp_strong.zip
+		"https://serverlist.piaservers.net/vpninfo/servers/v6" \
+		| awk '/^$/{exit}1' > "$_tmp_data"
 
-	_prc_changed="$(CompareArchiveContents "/tmp/pia_udp_standard.zip /tmp/pia_tcp_standard.zip /tmp/pia_udp_strong.zip /tmp/pia_tcp_strong.zip")"
+	if ! jq -e '.regions | length > 0' "$_tmp_data" >/dev/null 2>&1; then
+		Print_Output true "PIA: Failed to fetch server list — check connectivity" "$ERR"
+		rm -f "$_tmp_data"
+		return 1
+	fi
 
-	if [ "$_prc_changed" = "true" ]; then
-		/opt/bin/7za -ba l "$OVPN_ARCHIVE_DIR/pia_udp_standard.zip" -- "*.ovpn" \
-			| awk '{ for (i = 6; i <= NF; i++) { printf "%s ",$i } printf "\n"}' \
-			| sed 's/\.ovpn//' \
-			| sort \
-			| awk '{$1=$1;print}' \
-			> "$SCRIPT_DIR/pia_countrydata"
-		Print_Output true "PIA: Archives updated" "$PASS"
+	/usr/sbin/curl -fsL --retry 3 \
+		"https://www.privateinternetaccess.com/openvpn/crl.rsa.2048.pem" \
+		-o "$_tmp_crl"
+
+	if [ -f "$_tmp_crl" ] && grep -q "BEGIN X509 CRL" "$_tmp_crl"; then
+		mv "$_tmp_crl" "$_pcrl"
 	else
-		Print_Output true "PIA: Archives unchanged" "$WARN"
+		Print_Output true "PIA: CRL download failed — continuing without CRL" "$WARN"
+		rm -f "$_tmp_crl"
 	fi
-}
 
-# provider_pia_needs_cache
-# Returns 0 (needs refresh) if the standard UDP archive is missing.
-provider_pia_needs_cache(){
-	if [ ! -f "$OVPN_ARCHIVE_DIR/pia_udp_standard.zip" ]; then
-		return 0
-	fi
-	return 1
+	mv "$_tmp_data" "$_psd"
+	_online=$(jq '[.regions[] | select(.offline == false)] | length' "$_psd")
+	_total=$(jq '.regions | length' "$_psd")
+	Print_Output true "PIA: Updated — ${_online} of ${_total} regions online" "$PASS"
 }

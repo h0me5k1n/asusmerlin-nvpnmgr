@@ -71,6 +71,11 @@ provider_nordvpn_get_server(){
 	_nord_hostname="$(printf '%s' "$_nord_vjson" | jq -r -e '.hostname // empty')"
 	[ -z "$_nord_hostname" ] && Print_Output true "NordVPN: Could not determine hostname" "$ERR" && return 1
 
+	_nord_load="$(printf '%s' "$_nord_vjson" | jq -r '.load // empty')"
+	if [ -n "$_nord_load" ]; then
+		printf '%s' "$_nord_load" > "$SCRIPT_DIR/nordvpn_load_${_nord_hostname%%.*}"
+	fi
+
 	printf '%s' "$_nord_hostname"
 }
 
@@ -194,12 +199,18 @@ provider_nordvpn_get_types(){
 }
 
 # provider_nordvpn_get_server_load desc
-# desc: nvram vpn_clientX_desc value containing hostname
+# desc: nvram vpn_clientX_desc value ("NordVPN <hostname_short> <type> <proto>")
+# Reads load written by get_server at selection time.
+# NordVPN /server/stats/ API was deprecated; load is cached from recommendations response.
 provider_nordvpn_get_server_load(){
 	_sl_desc="$1"
-	_sl_host="$(printf '%s' "$_sl_desc" | cut -f2 -d ' ' | tr 'A-Z' 'a-z').nordvpn.com"
-	/usr/sbin/curl -fsL --retry 3 "https://api.nordvpn.com/server/stats/${_sl_host}" \
-		| jq -r -e '.percent // "Unknown"'
+	_sl_short="$(printf '%s' "$_sl_desc" | cut -f2 -d ' ' | tr 'A-Z' 'a-z')"
+	_sl_cache="$SCRIPT_DIR/nordvpn_load_${_sl_short}"
+	if [ -f "$_sl_cache" ]; then
+		cat "$_sl_cache"
+	else
+		printf 'Unknown\n'
+	fi
 }
 
 # provider_nordvpn_refresh_cache
