@@ -19,7 +19,7 @@ repo merges jackyaz's work as the baseline and restructures it into a modular pr
 | 4 — WebUI | ⏸ Deferred | shared-jy dependency removed; full modernisation pending |
 | 5 — Documentation | ✅ Done | README rewritten |
 
-CI: `bash scripts/smoke-test.sh` — 83 tests, runs on every PR.
+CI: `bash scripts/smoke-test.sh` — 103 tests, runs on every PR.
 Local provider test: `bash scripts/provider-test.sh <provider>` — live API without a router.
 
 ## Provider status
@@ -29,6 +29,9 @@ of truth. Do not rely on any listing in docs.
 
 **Rule: any change to a provider resets its `# Status:` to `UNTESTED` until the change is
 verified end-to-end with a live account on a real router.**
+
+**Install convention:** `Install_Providers` in `vpnmgr.sh` lists only `ACTIVE` providers. When
+promoting a provider from `UNTESTED` to `ACTIVE`, add it to that loop in the same PR.
 
 ## Technical constraints
 
@@ -57,7 +60,7 @@ Use `_prefixed` variables inside provider functions (not `local`) — providers 
 - `*.ovpn`, `*.zip`, `*.pem`, `*.p12` — provider configs/certs are downloaded at runtime
 
 ### Other constraints
-- Run `bash scripts/smoke-test.sh` before every commit — must stay at 83/83
+- Run `bash scripts/smoke-test.sh` before every commit — must stay at 103/103
 - Feature branches only — `main` is protected
 - No Co-Authored-By trailers in commits
 - Commit style: `type: description` (feat, fix, refactor, docs, chore)
@@ -74,10 +77,11 @@ vpnmgr/
 ├── providers/
 │   ├── provider_nordvpn.sh      # ACTIVE
 │   ├── provider_pia.sh          # UNTESTED
+│   ├── provider_surfshark.sh    # UNTESTED
 │   ├── provider_wevpn.sh        # DEPRECATED
 │   └── provider_template.sh     # Template for new providers
 ├── scripts/
-│   ├── smoke-test.sh            # CI — 83 tests
+│   ├── smoke-test.sh            # CI — 103 tests
 │   └── provider-test.sh         # Live API test harness
 ├── .claude/
 │   └── commands/                # Skill files (used by Claude Code)
@@ -96,6 +100,28 @@ vpnmgr/
 | `/webui` | `.claude/commands/webui.md` | Working on the WebUI |
 
 Always read the relevant skill before starting work on that area.
+
+## Manual provider testing on a real router
+
+To test an `UNTESTED` provider that isn't yet in the `Install_Providers` loop:
+
+1. SSH to the router
+2. Fetch the provider file directly (replace `main` with your branch if testing pre-merge):
+   ```sh
+   /usr/sbin/curl -fsL --retry 3 \
+     "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/main/providers/provider_<name>.sh" \
+     -o "/jffs/addons/vpnmgr.d/providers/provider_<name>.sh"
+   chmod 0755 "/jffs/addons/vpnmgr.d/providers/provider_<name>.sh"
+   ```
+3. Run `vpnmgr` — the provider will appear in the slot configuration menu
+4. Test end-to-end: country/city selection, `get_server` returns a hostname, OVPN applies to
+   the client slot, VPN tunnel connects, server load shows in WebUI
+5. If passing: update `# Status: UNTESTED` → `# Status: ACTIVE` in the provider file, add
+   the provider name to the `Install_Providers` loop in `vpnmgr.sh`, run both test scripts,
+   open a PR
+
+Check router tunnel state: `ifconfig tun1x` / `nvram get vpn_client1_state`
+Check router logs: `logread` or `/tmp/syslog.log`
 
 ## Key output conventions
 

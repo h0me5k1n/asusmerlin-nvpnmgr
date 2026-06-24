@@ -544,7 +544,8 @@ Create_Symlinks(){
 
 Install_Providers(){
 	mkdir -p "$PROVIDERS_DIR"
-	for provider in nordvpn pia wevpn; do
+	# shellcheck disable=SC2043
+	for provider in nordvpn; do
 		/usr/sbin/curl -fsL --retry 3 \
 			"$SCRIPT_REPO/providers/provider_${provider}.sh" \
 			-o "$PROVIDERS_DIR/provider_${provider}.sh"
