@@ -120,6 +120,7 @@ Check_Lock(){
 		fi
 	else
 		echo "$$" > "/tmp/$SCRIPT_NAME.lock"
+		trap 'Clear_Lock' INT TERM
 		return 0
 	fi
 }
@@ -604,11 +605,11 @@ Conf_Exists(){
 }
 
 getIP(){
-	echo "$1" | grep "^remote " | cut -f2 -d' '
+	echo "$1" | grep "^remote " | head -1 | cut -f2 -d' '
 }
 
 getPort(){
-	echo "$1" | grep "^remote " | cut -f3 -d' '
+	echo "$1" | grep "^remote " | head -1 | cut -f3 -d' '
 }
 
 getCipher(){
@@ -811,7 +812,7 @@ UpdateVPNConfig(){
 	nvram set vpn_client"$VPN_NO"_reneg=0
 	nvram set vpn_client"$VPN_NO"_tlsremote=0
 	nvram set vpn_client"$VPN_NO"_userauth=1
-	nvram set vpn_client"$VPN_NO"_useronly=0
+	nvram set vpn_client"$VPN_NO"_useronly=1
 
 	VPN_COMP="$("provider_${VPN_PROVIDER_LC}_get_comp")"
 	nvram set vpn_client"$VPN_NO"_comp="$VPN_COMP"
@@ -1112,34 +1113,35 @@ SetVPNParameters(){
 		fi
 		while true; do
 			printf "\\n${BOLD}Please select a VPN provider:${CLEARFORMAT}\\n"
-			printf "    1. NordVPN\\n"
-			printf "    2. Private Internet Access (PIA)\\n"
-			printf "    3. WeVPN\\n\\n"
-			printf "Choose an option:  "
+			_provcnt=0
+			_provconfigs=""
+			for _pf in "$PROVIDERS_DIR"/provider_*.sh; do
+				[ -f "$_pf" ] || continue
+				_pstatus="$(sed -n '3p' "$_pf")"
+				case "$_pstatus" in *DEPRECATED*|*UNMAINTAINED*|*TEMPLATE*) continue ;; esac
+				_pdisplay="$(grep '^# Display:' "$_pf" | cut -c12-)"
+				_pconfig="$(grep '^# Config:' "$_pf" | cut -c11-)"
+				[ -z "$_pdisplay" ] || [ -z "$_pconfig" ] && continue
+				_provcnt=$((_provcnt + 1))
+				printf "    %d. %s\\n" "$_provcnt" "$_pdisplay"
+				_provconfigs="${_provconfigs}${_pconfig}
+"
+			done
+			printf "\\nChoose an option:  "
 			read -r provmenu
-			
 			case "$provmenu" in
-				1)
-					vpnprovider="NordVPN"
-					printf "\\n"
-					break
-				;;
-				2)
-					vpnprovider="PIA"
-					printf "\\n"
-					break
-				;;
-				3)
-					vpnprovider="WeVPN"
-					printf "\\n"
-					break
-				;;
 				e)
 					exitmenu="exit"
 					break
 				;;
 				*)
-					printf "\\n\\e[31mPlease enter a valid choice (1-2)${CLEARFORMAT}\\n"
+					if Validate_Number "$provmenu" && [ "$provmenu" -ge 1 ] && [ "$provmenu" -le "$_provcnt" ]; then
+						vpnprovider="$(printf '%s' "$_provconfigs" | sed -n "${provmenu}p")"
+						printf "\\n"
+						break
+					else
+						printf "\\n\\e[31mPlease enter a valid choice (1-%s)${CLEARFORMAT}\\n" "$_provcnt"
+					fi
 				;;
 			esac
 		done
@@ -1158,13 +1160,7 @@ SetVPNParameters(){
 		else
 			while true; do
 				printf "\\n${BOLD}Please select a VPN Type:${CLEARFORMAT}\\n"
-				COUNTER=1
-				IFS="$(printf '\n')"
-				for VTYPE in $typelist; do
-					printf "    %s. %s\\n" "$COUNTER" "$VTYPE"
-					COUNTER=$((COUNTER+1))
-				done
-				unset IFS
+				printf '%s\n' "$typelist" | awk '{ printf "  %3d. %s\n", NR, $0 }'
 				printf "\\nChoose an option:  "
 				read -r typemenu
 
@@ -1245,15 +1241,17 @@ SetVPNParameters(){
 		COUNTCOUNTRIES="$(printf '%s\n' "$LISTCOUNTRIES" | wc -l)"
 		while true; do
 			printf "\\n${BOLD}Please select a country:${CLEARFORMAT}\\n"
-			COUNTER=1
-			IFS="$(printf '\n')"
-			for COUNTRY in $LISTCOUNTRIES; do
-				printf "    %s. %s\\n" "$COUNTER" "$COUNTRY" >> /tmp/vpnmgr_countrylist
-				COUNTER=$((COUNTER+1))
-			done
-			column /tmp/vpnmgr_countrylist
-			rm -f /tmp/vpnmgr_countrylist
-			unset IFS
+			printf '%s\n' "$LISTCOUNTRIES" | awk -v total="$COUNTCOUNTRIES" '
+				{ lines[NR]=$0 }
+				END {
+					half=int((total+1)/2)
+					for(i=1;i<=half;i++){
+						printf "  %3d. %-35s", i, lines[i]
+						if(i+half<=total) printf "  %3d. %s", i+half, lines[i+half]
+						printf "\n"
+					}
+				}
+			'
 
 			printf "\\nChoose an option:  "
 			read -r country_choice
@@ -1312,13 +1310,7 @@ SetVPNParameters(){
 			COUNTCITIES="$(printf '%s\n' "$LISTCITIES" | wc -l)"
 			while true; do
 				printf "\\n${BOLD}Please select a city:${CLEARFORMAT}\\n"
-				COUNTER=1
-				IFS="$(printf '\n')"
-				for CITY in $LISTCITIES; do
-					printf "    %s. %s\\n" "$COUNTER" "$CITY"
-					COUNTER=$((COUNTER+1))
-				done
-				unset IFS
+				printf '%s\n' "$LISTCITIES" | awk '{ printf "  %3d. %s\n", NR, $0 }'
 
 				printf "\\nChoose an option:  "
 				read -r city_choice
@@ -1950,7 +1942,6 @@ Check_Requirements(){
 		opkg update
 		opkg install jq
 		opkg install p7zip
-		opkg install column
 		opkg install findutils
 		return 0
 	else
@@ -2152,7 +2143,6 @@ if [ -z "$1" ]; then
 	if [ ! -f /opt/bin/7za ]; then
 		opkg update
 		opkg install p7zip
-		opkg install column
 	fi
 	Create_Dirs
 	Conf_Exists
@@ -2252,7 +2242,6 @@ case "$1" in
 		if [ ! -f /opt/bin/7za ]; then
 			opkg update
 			opkg install p7zip
-			opkg install column
 		fi
 		Create_Dirs
 		Conf_Exists
@@ -2269,7 +2258,6 @@ case "$1" in
 		if [ ! -f /opt/bin/7za ]; then
 			opkg update
 			opkg install p7zip
-			opkg install column
 		fi
 		Create_Dirs
 		Conf_Exists

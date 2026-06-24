@@ -1,6 +1,8 @@
 #!/bin/sh
 # WeVPN provider module for vpnmgr
 # Status: DEPRECATED — WeVPN is no longer operational
+# Display: WeVPN
+# Config: WeVPN
 #
 # This module is kept for historical reference only. All network operations
 # will fail or print a deprecation notice. Do not use for new configurations.

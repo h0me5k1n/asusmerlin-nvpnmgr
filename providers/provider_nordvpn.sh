@@ -1,6 +1,8 @@
 #!/bin/sh
 # NordVPN provider module for vpnmgr
 # Status: ACTIVE
+# Display: NordVPN
+# Config: NordVPN
 #
 # Depends on: jq, curl
 # Cache file: $SCRIPT_DIR/nordvpn_countrydata  (JSON array from NordVPN API)
@@ -88,7 +90,7 @@ _nordvpn_get_recommended(){
 		_nr_url="${_nr_url}&filters[country_id]=${_nr_cid}"
 	fi
 	_nr_url="${_nr_url}&limit=1"
-	/usr/sbin/curl -fsL --retry 3 "$_nr_url" | jq -r -e '.[] // empty'
+	/usr/sbin/curl --globoff -fsL --retry 3 "$_nr_url" | jq -r -e '.[] // empty'
 }
 
 _nordvpn_get_city(){
@@ -96,7 +98,7 @@ _nordvpn_get_city(){
 	_nc_prot="$2"
 	_nc_cid="$3"
 	_nc_cityid="$4"
-	/usr/sbin/curl -fsL --retry 3 \
+	/usr/sbin/curl --globoff -fsL --retry 3 \
 		"https://api.nordvpn.com/v1/servers/recommendations?filters[servers_groups][identifier]=${_nc_type}&filters[servers_technologies][identifier]=${_nc_prot}&filters[country_id]=${_nc_cid}&limit=2500" \
 		| jq -r -e "[ .[] | select(.locations[].country.city.id==${_nc_cityid})][0] // empty"
 }
