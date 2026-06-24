@@ -57,7 +57,8 @@ vpnmgr/
 │   ├── provider_wevpn.sh       # WeVPN — deprecated
 │   └── provider_template.sh   # Template for new providers
 ├── scripts/
-│   └── smoke-test.sh           # Local CI smoke test (78 checks)
+│   ├── smoke-test.sh           # Local CI smoke test
+│   └── provider-test.sh        # Live API test harness for provider modules
 └── .github/workflows/ci.yml    # GitHub Actions — runs smoke-test on every PR
 ```
 
@@ -77,6 +78,18 @@ To switch a running installation between the stable release and the `develop` br
 vpnmgr switch stable    # pins to main
 vpnmgr switch develop   # pins to develop branch
 ```
+
+### Testing a provider locally
+
+Before deploying to a router, verify a provider's API integration works from your local machine (requires `curl` and `jq`):
+
+```sh
+bash scripts/provider-test.sh nordvpn
+```
+
+This exercises the live NordVPN API — country/city lookups, server recommendations, OVPN config download, and cert extraction — without touching any router state. `write_certs` is validated as a dry run: the CA and tls-auth blocks are extracted from the downloaded OVPN and verified, but nothing is written to the filesystem.
+
+Providers marked `DEPRECATED` in their `# Status:` header skip network tests automatically.
 
 ### Adding a provider
 

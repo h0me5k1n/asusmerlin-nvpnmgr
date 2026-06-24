@@ -8,6 +8,13 @@
 #
 # Arguments are positional; providers must not use global state from vpnmgr.sh
 # except for SCRIPT_DIR, OVPN_ARCHIVE_DIR, SCRIPT_REPO and Print_Output.
+#
+# Status values (line 3 of every provider file — read by scripts/provider-test.sh):
+#   ACTIVE       — provider is maintained and its API is operational
+#   UNMAINTAINED — provider was functional but is no longer actively maintained;
+#                  API tests still run but failures may occur
+#   DEPRECATED   — provider service is offline; only static tests run in provider-test.sh
+#   TEMPLATE     — not a real provider; provider-test.sh will exit immediately
 
 ##########         Shellcheck directives     ##########
 # shellcheck disable=SC2039
