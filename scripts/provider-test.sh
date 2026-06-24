@@ -80,6 +80,12 @@ case "$STATUS" in
         echo ""
         NETWORK_TESTS=false
         ;;
+    UNTESTED)
+        _warn "Provider is UNTESTED — implementation not yet verified on a live account"
+        _warn "API tests will run; failures may indicate config errors rather than API changes"
+        echo ""
+        NETWORK_TESTS=true
+        ;;
     UNMAINTAINED)
         _warn "Provider is UNMAINTAINED — API tests may fail if the service has changed"
         echo ""

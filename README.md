@@ -36,8 +36,8 @@ If that doesn't work (script not yet on `$PATH`):
 
 | Provider | Status |
 |----------|--------|
-| **NordVPN** | Active — maintained |
-| **Private Internet Access (PIA)** | Unmaintained — extracted from jackyaz's work; contributions welcome |
+| **NordVPN** | Active — maintained and tested |
+| **Private Internet Access (PIA)** | Untested — rewritten to use PIA JSON API; needs verification on a live account |
 | **WeVPN** | Deprecated — WeVPN is no longer operational |
 
 ## Repository layout

@@ -1,6 +1,6 @@
 #!/bin/sh
 # PIA (Private Internet Access) provider module for vpnmgr
-# Status: ACTIVE — rewritten to use PIA JSON server list API
+# Status: UNTESTED — rewritten to use PIA JSON API; not yet verified on a live account
 #
 # Depends on: jq, curl
 # Cache files: $SCRIPT_DIR/pia_serverdata  (JSON from serverlist.piaservers.net)

@@ -10,7 +10,9 @@
 # except for SCRIPT_DIR, OVPN_ARCHIVE_DIR, SCRIPT_REPO and Print_Output.
 #
 # Status values (line 3 of every provider file — read by scripts/provider-test.sh):
-#   ACTIVE       — provider is maintained and its API is operational
+#   ACTIVE       — provider is maintained and verified working with a live account
+#   UNTESTED     — implementation complete but not yet verified on a real router/account;
+#                  API tests still run, failures are expected until confirmed working
 #   UNMAINTAINED — provider was functional but is no longer actively maintained;
 #                  API tests still run but failures may occur
 #   DEPRECATED   — provider service is offline; only static tests run in provider-test.sh
