@@ -17,6 +17,9 @@
 #                  API tests still run but failures may occur
 #   DEPRECATED   — provider service is offline; only static tests run in provider-test.sh
 #   TEMPLATE     — not a real provider; provider-test.sh will exit immediately
+#
+# Rule: any change to a provider resets its status to UNTESTED until the change
+# has been tested end-to-end with a live account on a real router.
 
 ##########         Shellcheck directives     ##########
 # shellcheck disable=SC2039
