@@ -111,7 +111,7 @@ function VPNTypesToggle(forminput){
 	}
 	
 	PopulateCityDropdown(prefix.replace('vpnmgr_vpn',''));
-	let dropdown = $j('select[name='+prefix+'_cityname]');
+	var dropdown = $j('select[name='+prefix+'_cityname]');
 	if(dropdown[0].length == 0 || dropdown.find('option:first-child').val().length == 0){
 		dropdown.prop('disabled',true);
 	}
@@ -166,7 +166,7 @@ function PopulateCountryDropdown(vpnclient){
 				continue;
 			}
 		}
-		let dropdown = $j('#vpnmgr_vpn'+vpnno+'_countryname');
+		var dropdown = $j('#vpnmgr_vpn'+vpnno+'_countryname');
 		dropdown.empty();
 		
 		var countryarray = [];
@@ -196,7 +196,7 @@ function PopulateCityDropdown(vpnclient){
 				continue;
 			}
 		}
-		let dropdown = $j('#vpnmgr_vpn'+vpnno+'_cityname');
+		var dropdown = $j('#vpnmgr_vpn'+vpnno+'_cityname');
 		dropdown.empty();
 		
 		if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'NordVPN'){
@@ -386,8 +386,8 @@ function get_conf_file(){
 				}
 				
 				for (var i = 0; i < window['vpnmgr_settings'].length; i++){
-					let settingname = window['vpnmgr_settings'][i][0];
-					let settingvalue = window['vpnmgr_settings'][i][1];
+					var settingname = window['vpnmgr_settings'][i][0];
+					var settingvalue = window['vpnmgr_settings'][i][1];
 					if(settingname.indexOf('cityid') != -1 || settingname.indexOf('countryid') != -1 || settingname.indexOf('countryname') != -1 || settingname.indexOf('cityname') != -1) continue;
 					if(settingname.indexOf('schdays') == -1){
 						eval('document.form.vpnmgr_'+settingname).value = settingvalue;
@@ -1195,7 +1195,7 @@ function parseCountryData(rawcountrydata){
 	tmpcountriessorted.sort();
 	
 	var unique = [];
-	for(let i = 0; i < tmpcountriessorted.length; i++){
+	for(var i = 0; i < tmpcountriessorted.length; i++){
 		if(!unique[tmpcountriessorted[i]]){
 			var obj = {};
 			obj['name']=tmpcountriessorted[i];
@@ -1314,7 +1314,7 @@ function setCitiesforCountry(forminput){
 	var inputvalue = forminput.value;
 	var prefix = inputname.substring(0,inputname.lastIndexOf('_'));
 	
-	let dropdown = $j('select[name='+prefix+'_cityname]');
+	var dropdown = $j('select[name='+prefix+'_cityname]');
 	dropdown.empty();
 	
 	if(eval('document.form.'+prefix+'_provider').value == 'NordVPN'){
@@ -1365,7 +1365,7 @@ function setCitiesforCountry(forminput){
 }
 
 function capitalizeFirstLetter(string){
-	return string.replace(/(^\w{1})|(\s{1}\w{1})/g,match => match.toUpperCase());
+	return string.replace(/(^\w{1})|(\s{1}\w{1})/g,function(match){ return match.toUpperCase(); });
 }
 
 function getCountryCode(string){

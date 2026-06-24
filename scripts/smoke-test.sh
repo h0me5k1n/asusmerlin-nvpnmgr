@@ -208,78 +208,27 @@ for pat in '*.ovpn' '*.zip' '*.p12' '*.pem'; do
 done
 
 # ---------------------------------------------------------------------------
-# Section 8: WebUI files — TODO (Phase 4)
-#
-# These checks are stubbed out because vpnmgr_www.js still contains ES6+
-# constructs from jackyaz's original code (let, const, arrow functions).
-# Enable each check after the Phase 4 WebUI rework cleans them up.
+# Section 8: WebUI files
 # ---------------------------------------------------------------------------
-section "8. WebUI files (TODO — Phase 4)"
+section "8. WebUI files"
 
 WEBUI_JS="${REPO_ROOT}/vpnmgr_www.js"
-WEBUI_CSS="${REPO_ROOT}/vpnmgr_www.css"
-WEBUI_ASP="${REPO_ROOT}/vpnmgr_www.asp"
 
-# TODO: JS syntax check
-# Requires: node (available on ubuntu-latest)
-# Enable once Phase 4 is complete.
-#   if node --check "$WEBUI_JS" 2>/dev/null; then
-#       pass "vpnmgr_www.js — node syntax"
-#   else
-#       fail "vpnmgr_www.js — node syntax: $(node --check "$WEBUI_JS" 2>&1)"
-#   fi
+# No ES6+ in the JS file — router WebKit does not support ES6
+for pat in '\blet ' '\bconst ' '=>' '`' '\bfetch('; do
+    hits=$(grep -n "$pat" "$WEBUI_JS" || true)
+    if [[ -z "$hits" ]]; then
+        pass "vpnmgr_www.js: no ES6+ pattern (${pat})"
+    else
+        fail "vpnmgr_www.js: ES6+ pattern '${pat}' found (not safe on router WebKit):"
+        echo "$hits" | sed 's/^/    /'
+    fi
+done
 
-# TODO: No ES6+ in the JS file
-# Router httpd may not support ES6; jackyaz's code has let/const/arrow functions
-# that must be replaced with var/function in Phase 4.
-# Enable once Phase 4 is complete.
-#   for pat in '\blet ' '\bconst ' '=>' '`' '\bfetch('; do
-#       hits=$(grep -n "$pat" "$WEBUI_JS" || true)
-#       if [[ -z "$hits" ]]; then
-#           pass "vpnmgr_www.js: no ES6+ pattern (${pat})"
-#       else
-#           fail "vpnmgr_www.js: ES6+ pattern '${pat}' found (not safe on router httpd):"
-#           echo "$hits" | sed 's/^/    /'
-#       fi
-#   done
-
-# TODO: jQuery uses $j not $ (noConflict mode — $ clashes with Merlin's prototype.js)
-# Enable once Phase 4 is complete.
-#   bare_dollar=$(grep -n '[^$a-zA-Z0-9]\$(' "$WEBUI_JS" | grep -v '\$j(' || true)
-#   if [[ -z "$bare_dollar" ]]; then
-#       pass "vpnmgr_www.js: jQuery calls use \$j (noConflict)"
-#   else
-#       fail "vpnmgr_www.js: bare \$() found — must use \$j() in noConflict mode:"
-#       echo "$bare_dollar" | sed 's/^/    /'
-#   fi
-
-# TODO: No hardcoded provider country/server lists in JS
-# After Phase 4 these must be loaded dynamically from /ext/vpnmgr/countries_*.htm
-# Enable once Phase 4 is complete.
-#   for var in nordvpncountries piacountries wevpncountries; do
-#       if grep -q "$var" "$WEBUI_JS"; then
-#           fail "vpnmgr_www.js: hardcoded ${var} array found — must be loaded dynamically"
-#       else
-#           pass "vpnmgr_www.js: no hardcoded ${var}"
-#       fi
-#   done
-
-# TODO: CSS syntax check
-# Requires: node + css npm package, or stylelint
-# Enable once Phase 4 is complete.
-#   node -e "require('fs'); require('css').parse(require('fs').readFileSync('$WEBUI_CSS','utf8'))" \
-#       && pass "vpnmgr_www.css — css parse" \
-#       || fail "vpnmgr_www.css — css parse error"
-
-# TODO: ASP/HTML structure check
-# Strip <% %> blocks and run through tidy (available on ubuntu-latest)
-# Enable once Phase 4 is complete.
-#   sed 's/<%[^%]*%>//g' "$WEBUI_ASP" \
-#       | tidy -errors -quiet --show-warnings no 2>&1 | grep -c 'Error' \
-#       | { read c; [[ "$c" -eq 0 ]] && pass "vpnmgr_www.asp — tidy HTML" \
-#           || fail "vpnmgr_www.asp — tidy found ${c} HTML error(s)"; }
-
-warn "WebUI checks skipped — vpnmgr_www.js has ES6+ from jackyaz; enable after Phase 4 rework"
+# TODO (Phase 5): JS syntax check via node
+# TODO (Phase 5): jQuery uses \$j not \$ (noConflict — \$ clashes with Merlin's prototype.js)
+# TODO (Phase 5): No hardcoded country arrays — must load dynamically from provider data files
+# TODO (Phase 5): CSS syntax check via stylelint
 
 # ---------------------------------------------------------------------------
 # Summary
