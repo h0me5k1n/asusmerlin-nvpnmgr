@@ -120,6 +120,7 @@ Check_Lock(){
 		fi
 	else
 		echo "$$" > "/tmp/$SCRIPT_NAME.lock"
+		trap 'Clear_Lock' INT TERM
 		return 0
 	fi
 }
@@ -1245,15 +1246,17 @@ SetVPNParameters(){
 		COUNTCOUNTRIES="$(printf '%s\n' "$LISTCOUNTRIES" | wc -l)"
 		while true; do
 			printf "\\n${BOLD}Please select a country:${CLEARFORMAT}\\n"
-			COUNTER=1
-			IFS="$(printf '\n')"
-			for COUNTRY in $LISTCOUNTRIES; do
-				printf "    %s. %s\\n" "$COUNTER" "$COUNTRY" >> /tmp/vpnmgr_countrylist
-				COUNTER=$((COUNTER+1))
-			done
-			column /tmp/vpnmgr_countrylist
-			rm -f /tmp/vpnmgr_countrylist
-			unset IFS
+			printf '%s\n' "$LISTCOUNTRIES" | awk -v total="$COUNTCOUNTRIES" '
+				{ lines[NR]=$0 }
+				END {
+					half=int((total+1)/2)
+					for(i=1;i<=half;i++){
+						printf "  %3d. %-35s", i, lines[i]
+						if(i+half<=total) printf "  %3d. %s", i+half, lines[i+half]
+						printf "\n"
+					}
+				}
+			'
 
 			printf "\\nChoose an option:  "
 			read -r country_choice
@@ -1950,7 +1953,6 @@ Check_Requirements(){
 		opkg update
 		opkg install jq
 		opkg install p7zip
-		opkg install column
 		opkg install findutils
 		return 0
 	else
@@ -2152,7 +2154,6 @@ if [ -z "$1" ]; then
 	if [ ! -f /opt/bin/7za ]; then
 		opkg update
 		opkg install p7zip
-		opkg install column
 	fi
 	Create_Dirs
 	Conf_Exists
@@ -2252,7 +2253,6 @@ case "$1" in
 		if [ ! -f /opt/bin/7za ]; then
 			opkg update
 			opkg install p7zip
-			opkg install column
 		fi
 		Create_Dirs
 		Conf_Exists
@@ -2269,7 +2269,6 @@ case "$1" in
 		if [ ! -f /opt/bin/7za ]; then
 			opkg update
 			opkg install p7zip
-			opkg install column
 		fi
 		Create_Dirs
 		Conf_Exists
