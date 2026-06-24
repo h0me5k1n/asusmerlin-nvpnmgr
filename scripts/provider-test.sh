@@ -228,13 +228,12 @@ else
     }
 
     # get_server_load
-    # The function expects the nvram vpn_clientX_desc format: "<tag> <hostname_short>"
-    # It cuts field 2 (space-delimited) then appends .nordvpn.com to build the stats URL.
+    # desc format matches nvram vpn_clientX_desc: "NordVPN <hostname_short> <type> <proto>"
     if [ -n "$server" ]; then
         server_short="${server%%.*}"
-        load=$(call get_server_load "NordVPN $server_short" 2>/dev/null) && {
+        load=$(call get_server_load "NordVPN $server_short Standard UDP" 2>/dev/null) && {
             _pass "get_server_load '$server' → ${load}%"
-        } || _fail "get_server_load '$server' — NordVPN /server/stats/ API returns 403 (deprecated by NordVPN; provider needs updating)"
+        } || _fail "get_server_load '$server'"
     else
         _skip "get_server_load — skipped (no server from get_server)"
     fi
