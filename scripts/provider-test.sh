@@ -178,13 +178,16 @@ else
     start=$(date +%s%3N)
     if call refresh_cache 2>/dev/null; then
         end=$(date +%s%3N); elapsed=$(( end - start ))
-        cache_file="$SCRIPT_DIR/${PROVIDER}_countrydata"
-        if [ -f "$cache_file" ]; then
-            country_count=$(jq 'length' "$cache_file" 2>/dev/null || echo "?")
-            _pass "refresh_cache [${elapsed}ms] — ${country_count} countries cached"
-        else
-            _pass "refresh_cache [${elapsed}ms]"
-        fi
+        # Providers use different cache file names — find whichever exists
+        cache_info=""
+        for _cf in "$SCRIPT_DIR/${PROVIDER}_countrydata" "$SCRIPT_DIR/${PROVIDER}_serverdata"; do
+            if [ -f "$_cf" ]; then
+                _n=$(jq 'if type=="array" then length elif .regions then .regions|length else 0 end' "$_cf" 2>/dev/null || echo "?")
+                cache_info=" — ${_n} regions cached"
+                break
+            fi
+        done
+        _pass "refresh_cache [${elapsed}ms]${cache_info}"
     else
         _fail "refresh_cache — API call failed"
     fi
@@ -256,25 +259,43 @@ else
     fi
 
     # write_certs dry run
+    # CA cert is required by all providers.
+    # Secondary block varies: <tls-auth> (NordVPN) or <crl-verify> (PIA).
     echo ""
     echo -e "${BOLD_FMT}write_certs (dry run)${NC}"
     if [ -n "$ovpn_content" ]; then
         _ca=$(printf '%s' "$ovpn_content" \
             | awk '/<ca>/{flag=1;next}/<\/ca>/{flag=0}flag' | sed '/^#/ d')
-        _static=$(printf '%s' "$ovpn_content" \
-            | awk '/<tls-auth>/{flag=1;next}/<\/tls-auth>/{flag=0}flag' | sed '/^#/ d')
 
-        if [ -n "$_ca" ] && [ -n "$_static" ]; then
-            _pass "CA and tls-auth blocks extractable from OVPN"
-            _info "CA first line:       $(printf '%s\n' "$_ca"     | head -1)"
-            _info "CA last line:        $(printf '%s\n' "$_ca"     | tail -1)"
-            _info "tls-auth first line: $(printf '%s\n' "$_static" | head -1)"
-            _info "Would write: /jffs/openvpn/vpn_crt_client1_ca"
-            _info "             /jffs/openvpn/vpn_crt_client1_static"
-        elif [ -z "$_ca" ]; then
-            _fail "write_certs dry run — <ca> block missing from OVPN"
+        _secondary=""
+        _secondary_label=""
+        _secondary_file=""
+        _tls=$(printf '%s' "$ovpn_content" \
+            | awk '/<tls-auth>/{flag=1;next}/<\/tls-auth>/{flag=0}flag' | sed '/^#/ d')
+        if [ -n "$_tls" ]; then
+            _secondary="$_tls"; _secondary_label="tls-auth"; _secondary_file="static"
         else
-            _fail "write_certs dry run — <tls-auth> block missing from OVPN"
+            _crl=$(printf '%s' "$ovpn_content" \
+                | awk '/<crl-verify>/{flag=1;next}/<\/crl-verify>/{flag=0}flag' | sed '/^#/ d')
+            if [ -n "$_crl" ]; then
+                _secondary="$_crl"; _secondary_label="crl-verify"; _secondary_file="crl"
+            fi
+        fi
+
+        if [ -z "$_ca" ]; then
+            _fail "write_certs dry run — <ca> block missing from OVPN"
+        elif [ -z "$_secondary" ]; then
+            _pass "CA block extractable from OVPN (no tls-auth or crl-verify block)"
+            _info "CA first line: $(printf '%s\n' "$_ca" | head -1)"
+            _info "CA last line:  $(printf '%s\n' "$_ca" | tail -1)"
+            _info "Would write: /jffs/openvpn/vpn_crt_client1_ca"
+        else
+            _pass "CA and ${_secondary_label} blocks extractable from OVPN"
+            _info "CA first line:              $(printf '%s\n' "$_ca"        | head -1)"
+            _info "CA last line:               $(printf '%s\n' "$_ca"        | tail -1)"
+            _info "${_secondary_label} first line: $(printf '%s\n' "$_secondary" | head -1)"
+            _info "Would write: /jffs/openvpn/vpn_crt_client1_ca"
+            _info "             /jffs/openvpn/vpn_crt_client1_${_secondary_file}"
         fi
     else
         _skip "write_certs dry run — skipped (no OVPN content from get_ovpn)"
