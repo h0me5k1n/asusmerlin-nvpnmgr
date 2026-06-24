@@ -605,11 +605,11 @@ Conf_Exists(){
 }
 
 getIP(){
-	echo "$1" | grep "^remote " | cut -f2 -d' '
+	echo "$1" | grep "^remote " | head -1 | cut -f2 -d' '
 }
 
 getPort(){
-	echo "$1" | grep "^remote " | cut -f3 -d' '
+	echo "$1" | grep "^remote " | head -1 | cut -f3 -d' '
 }
 
 getCipher(){
@@ -812,7 +812,7 @@ UpdateVPNConfig(){
 	nvram set vpn_client"$VPN_NO"_reneg=0
 	nvram set vpn_client"$VPN_NO"_tlsremote=0
 	nvram set vpn_client"$VPN_NO"_userauth=1
-	nvram set vpn_client"$VPN_NO"_useronly=0
+	nvram set vpn_client"$VPN_NO"_useronly=1
 
 	VPN_COMP="$("provider_${VPN_PROVIDER_LC}_get_comp")"
 	nvram set vpn_client"$VPN_NO"_comp="$VPN_COMP"
@@ -1159,13 +1159,7 @@ SetVPNParameters(){
 		else
 			while true; do
 				printf "\\n${BOLD}Please select a VPN Type:${CLEARFORMAT}\\n"
-				COUNTER=1
-				IFS="$(printf '\n')"
-				for VTYPE in $typelist; do
-					printf "    %s. %s\\n" "$COUNTER" "$VTYPE"
-					COUNTER=$((COUNTER+1))
-				done
-				unset IFS
+				printf '%s\n' "$typelist" | awk '{ printf "  %3d. %s\n", NR, $0 }'
 				printf "\\nChoose an option:  "
 				read -r typemenu
 
