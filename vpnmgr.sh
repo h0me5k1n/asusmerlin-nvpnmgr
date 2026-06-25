@@ -2000,9 +2000,11 @@ Menu_Install(){
 	Install_Providers
 	Refresh_Provider_Cache
 
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
+	Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 	Shortcut_Script create
 	Clear_Lock
-	
+
 	ScriptHeader
 	MainMenu
 }
