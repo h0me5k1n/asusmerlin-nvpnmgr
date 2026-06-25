@@ -271,6 +271,15 @@ Update_File(){
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
+	elif [ "$1" = "vpnmgr_www.js" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
+		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
+			cp -f "$SCRIPT_DIR/$1" "$SCRIPT_WEB_DIR/$1"
+			Print_Output true "New version of $1 downloaded" "$PASS"
+		fi
+		rm -f "$tmpfile"
 	else
 		return 1
 	fi
@@ -537,8 +546,8 @@ Create_Symlinks(){
 		[ -f "$_pfile" ] || continue
 		_pbase="$(basename "$_pfile")"
 		_pid="${_pbase#provider_}"; _pid="${_pid%.sh}"
-		_pname="$(grep "^PROVIDER_NAME=" "$_pfile" | cut -d'"' -f2)"
-		_pstatus="$(grep "^PROVIDER_STATUS=" "$_pfile" | cut -d'"' -f2)"
+		_pname="$(grep "^# Display:" "$_pfile" | sed 's/^# Display: //')"
+		_pstatus="$(grep "^# Status:" "$_pfile" | awk '{print $3}')"
 		if [ "$_pstatus" = "ACTIVE" ]; then
 			printf '%s|%s\n' "$_pid" "$_pname" >> "$SCRIPT_DIR/providers_list"
 			ln -s "$SCRIPT_DIR/${_pid}_countrydata" "$SCRIPT_WEB_DIR/${_pid}_countrydata.htm" 2>/dev/null
