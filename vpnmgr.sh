@@ -30,7 +30,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="vpnmgr"
-readonly SCRIPT_VERSION="v3.0.0"
+readonly SCRIPT_VERSION="v3.0.1"
 SCRIPT_BRANCH="main"
 SCRIPT_REPO="https://raw.githubusercontent.com/h0me5k1n/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
