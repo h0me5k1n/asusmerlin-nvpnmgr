@@ -271,6 +271,15 @@ Update_File(){
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
+	elif [ "$1" = "vpnmgr_www.js" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
+		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
+			cp -f "$SCRIPT_DIR/$1" "$SCRIPT_WEB_DIR/$1"
+			Print_Output true "New version of $1 downloaded" "$PASS"
+		fi
+		rm -f "$tmpfile"
 	else
 		return 1
 	fi
@@ -531,13 +540,26 @@ Create_Symlinks(){
 	rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
 	
 	ln -s "$SCRIPT_DIR/config" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
-	ln -s "$SCRIPT_DIR/nordvpn_countrydata" "$SCRIPT_WEB_DIR/nordvpn_countrydata.htm" 2>/dev/null
-	ln -s "$SCRIPT_DIR/pia_countrydata" "$SCRIPT_WEB_DIR/pia_countrydata.htm" 2>/dev/null
-	ln -s "$SCRIPT_DIR/wevpn_countrydata" "$SCRIPT_WEB_DIR/wevpn_countrydata.htm" 2>/dev/null
-	
+
+	printf '' > "$SCRIPT_DIR/providers_list"
+	for _pfile in "$PROVIDERS_DIR/provider_"*.sh; do
+		[ -f "$_pfile" ] || continue
+		_pbase="$(basename "$_pfile")"
+		_pid="${_pbase#provider_}"; _pid="${_pid%.sh}"
+		_pname="$(grep "^# Display:" "$_pfile" | sed 's/^# Display: //')"
+		_pstatus="$(grep "^# Status:" "$_pfile" | awk '{print $3}')"
+		if [ "$_pstatus" = "ACTIVE" ]; then
+			printf '%s|%s\n' "$_pid" "$_pname" >> "$SCRIPT_DIR/providers_list"
+			ln -s "$SCRIPT_DIR/${_pid}_countrydata" "$SCRIPT_WEB_DIR/${_pid}_countrydata.htm" 2>/dev/null
+		fi
+	done
+	ln -s "$SCRIPT_DIR/providers_list" "$SCRIPT_WEB_DIR/providers.htm" 2>/dev/null
+
+	cp -f "$SCRIPT_DIR/vpnmgr_www.js" "$SCRIPT_WEB_DIR/vpnmgr_www.js" 2>/dev/null
+
 	ln -s /tmp/detect_vpnmgr.js "$SCRIPT_WEB_DIR/detect_vpnmgr.js" 2>/dev/null
 	ln -s /tmp/vpnmgrserverloads "$SCRIPT_WEB_DIR/vpnmgrserverloads.js" 2>/dev/null
-	
+
 	if [ ! -d "$SCRIPT_WEB_DIR/www" ]; then
 		ln -s "$SCRIPT_WWW_DIR" "$SCRIPT_WEB_DIR/www" 2>/dev/null
 	fi
@@ -1972,6 +1994,7 @@ Menu_Install(){
 	Auto_ServiceEvent create 2>/dev/null
 	
 	Update_File vpnmgr_www.asp
+	Update_File vpnmgr_www.js
 	Update_File web-assets
 
 	Install_Providers
@@ -2039,6 +2062,7 @@ Menu_Uninstall(){
 	fi
 	flock -u "$FD"
 	rm -f "$SCRIPT_DIR/vpnmgr_www.asp" 2>/dev/null
+	rm -f "$SCRIPT_DIR/vpnmgr_www.js" 2>/dev/null
 	
 	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	sed -i '/vpnmgr_version_local/d' "$SETTINGSFILE"
