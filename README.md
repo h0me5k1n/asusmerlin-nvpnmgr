@@ -134,6 +134,13 @@ All `.sh` files must be **busybox ash compatible**. No bash arrays, no `[[ ]]`, 
 
 GPL-3.0 — see [LICENSE](LICENSE).
 
+## Supporting development
+
+Love the script and want to support future development? Any and all donations gratefully received!
+
+| [![paypal](https://www.paypalobjects.com/en_GB/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=6FWFBJL3A3FL6) <br /><br /> [**PayPal donation**](https://www.paypal.com/donate/?hosted_button_id=6FWFBJL3A3FL6) | [![QR code](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.paypal.com/donate/?hosted_button_id=6FWFBJL3A3FL6)](https://www.paypal.com/donate/?hosted_button_id=6FWFBJL3A3FL6) |
+| :----: | --- |
+
 ## Help and issues
 
 Open an issue on this repo, or post in the [Asuswrt-Merlin AddOns forum on SNBForums](https://www.snbforums.com/forums/asuswrt-merlin-addons.60/?prefix_id=11).
