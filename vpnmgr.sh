@@ -30,7 +30,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="vpnmgr"
-readonly SCRIPT_VERSION="v3.0.0"
+readonly SCRIPT_VERSION="v3.0.1"
 SCRIPT_BRANCH="main"
 SCRIPT_REPO="https://raw.githubusercontent.com/h0me5k1n/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -1650,21 +1650,20 @@ resolv-retry infinite
 remote-cert-tls server
 ping 15
 ping-restart 60
+ping-timer-rem
 persist-key
 persist-tun
 reneg-sec 0
 fast-io
-disable-occ
 mute-replay-warnings
 sndbuf 524288
 rcvbuf 524288
-push "sndbuf 524288"
-push "rcvbuf 524288"
 pull-filter ignore "auth-token"
 pull-filter ignore "ifconfig-ipv6"
 pull-filter ignore "route-ipv6"
 pull-filter ignore "ping"
-pull-filter ignore "ping-restart"'
+pull-filter ignore "ping-restart"
+auth-nocache'
 	
 	if [ "$VPN_PROT_SHORT" = "UDP" ]; then
 		vpncustomoptions="$vpncustomoptions
