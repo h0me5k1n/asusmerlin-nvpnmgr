@@ -1,6 +1,6 @@
 # vpnmgr
 
-![CI](https://github.com/h0me5k1n/asusmerlin-nvpnmgr/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/h0me5k1n/vpnmgr/actions/workflows/ci.yml/badge.svg)
 
 VPN client manager for AsusWRT-Merlin routers. Manages up to five OpenVPN clients — server selection, scheduled refresh, OVPN config application, and a router WebUI tab.
 
@@ -13,7 +13,7 @@ Asuswrt-Merlin 384.15 / 384.13_4 or Fork 43E5 or later — [asuswrt-merlin.ng](h
 From an SSH session on the router:
 
 ```sh
-/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/main/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
+/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/vpnmgr/main/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
 ```
 
 ## Usage
@@ -69,7 +69,7 @@ vpnmgr/
 Replace `<branch>` with the branch name:
 
 ```sh
-/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/asusmerlin-nvpnmgr/<branch>/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
+/usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/h0me5k1n/vpnmgr/<branch>/vpnmgr.sh" -o "/jffs/scripts/vpnmgr" && chmod 0755 /jffs/scripts/vpnmgr && /jffs/scripts/vpnmgr install
 ```
 
 To switch a running installation between the stable release and the `develop` branch:
@@ -111,12 +111,12 @@ All `.sh` files must be **busybox ash compatible**. No bash arrays, no `[[ ]]`, 
 - [x] **Phase 2** — Modular providers: all provider logic extracted to `providers/`; CI smoke test added
 - [x] **Phase 3** — Branding sweep: URLs, integrity check, and banner updated to h0me5k1n
 - [x] **Phase 4** — Web assets: `jquery.js` and `detect.js` bundled in `www/`; `jackyaz/shared-jy` dependency removed
-- [ ] **Phase 5** — WebUI modernisation: ES6 → ES5 for router compatibility; dynamic dropdowns from provider data
+- [x] **Phase 5** — WebUI modernisation: dynamic provider loading from `providers.htm`; ES5-clean JS; inline script blob replaced with external `vpnmgr_www.js`
 - [ ] **Phase 6** — Documentation: provider authoring guide, contributing guide, CLI/WebUI screenshots
 
 ## Project history
 
-1. **[h0me5k1n/asusmerlin-nvpnmgr](https://github.com/h0me5k1n/asusmerlin-nvpnmgr)** — the original project, NordVPN-only CLI.
+1. **[h0me5k1n/vpnmgr](https://github.com/h0me5k1n/vpnmgr)** — the original project, NordVPN-only CLI.
 
 2. **[jackyaz/vpnmgr](https://github.com/jackyaz/vpnmgr)** — [@jackyaz](https://github.com/jackyaz) forked and massively expanded it across 429 commits: full WebUI, multi-provider support, scheduled refresh, self-update. Now archived. His work is the backbone of this codebase and is preserved in full in the commit history.
 
