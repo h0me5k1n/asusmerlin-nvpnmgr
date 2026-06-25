@@ -30,7 +30,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="vpnmgr"
-readonly SCRIPT_VERSION="v2.3.2"
+readonly SCRIPT_VERSION="v3.0.0"
 SCRIPT_BRANCH="main"
 SCRIPT_REPO="https://raw.githubusercontent.com/h0me5k1n/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -1975,9 +1975,18 @@ Menu_Install(){
 	ScriptHeader
 	Print_Output true "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by h0me5k1n and JackYaz"
 	sleep 1
-	
+
+	if [ -d "$SCRIPT_DIR/providers" ] && [ ! -f "$SCRIPT_DIR/providers_list" ]; then
+		Print_Output false "An installation of jackyaz's vpnmgr was detected." "$WARN"
+		Print_Output false "Please uninstall it first before installing this version:" "$WARN"
+		Print_Output false "  vpnmgr uninstall" "$WARN"
+		Print_Output false "Then re-run the install command from https://github.com/h0me5k1n/vpnmgr" "$WARN"
+		Clear_Lock
+		exit 1
+	fi
+
 	Print_Output false "Checking your router meets the requirements for $SCRIPT_NAME"
-	
+
 	if ! Check_Requirements; then
 		Print_Output false "Requirements for $SCRIPT_NAME not met, please see above for the reason(s)" "$CRIT"
 		PressEnter
@@ -2000,9 +2009,11 @@ Menu_Install(){
 	Install_Providers
 	Refresh_Provider_Cache
 
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
+	Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 	Shortcut_Script create
 	Clear_Lock
-	
+
 	ScriptHeader
 	MainMenu
 }

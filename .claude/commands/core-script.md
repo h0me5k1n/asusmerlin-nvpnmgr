@@ -226,6 +226,22 @@ Update_Check() {
 }
 ```
 
+## Version Bumping (REQUIRED)
+
+`SCRIPT_VERSION` is defined at the top of `vpnmgr.sh` (`readonly SCRIPT_VERSION="vX.Y.Z"`).
+
+**Bump it whenever you change:**
+- `vpnmgr.sh` itself
+- Any `providers/provider_*.sh` file
+
+CI enforces this: the `version-bump` job in `.github/workflows/ci.yml` will fail the PR if script files changed but the version didn't. Follow semver:
+
+| Change type | Bump |
+|-------------|------|
+| Breaking change or major refactor | Major (`v3.0.0 → v4.0.0`) |
+| New provider, new feature | Minor (`v3.0.0 → v3.1.0`) |
+| Bug fix, small tweak | Patch (`v3.0.0 → v3.0.1`) |
+
 ## Common Tasks
 
 ### Adding a new CLI menu option

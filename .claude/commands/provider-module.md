@@ -205,15 +205,18 @@ The test harness:
 1. Copy `providers/provider_template.sh` to `providers/provider_<name>.sh`
 2. Set `# Status: UNTESTED` on line 3
 3. Implement all 17 functions
-4. Run `sh -n providers/provider_<name>.sh` — must be clean
-5. Run `bash scripts/smoke-test.sh` — must stay at the current pass count
-6. Run `bash scripts/provider-test.sh <name>` — all network functions must pass
-7. Open a PR — CI enforces the smoke test on every push
-8. Once tested end-to-end on a real router with a live account, update `# Status: ACTIVE`
+4. Bump `SCRIPT_VERSION` in `vpnmgr.sh` (CI will reject the PR if you don't — see core-script skill for semver guidance)
+5. Run `sh -n providers/provider_<name>.sh` — must be clean
+6. Run `bash scripts/smoke-test.sh` — must stay at the current pass count
+7. Run `bash scripts/provider-test.sh <name>` — all network functions must pass
+8. Open a PR — CI enforces the smoke test and version bump check on every push
+9. Once tested end-to-end on a real router with a live account, update `# Status: ACTIVE`
 
 ## Updating an existing provider
 
-Any change to a provider — API endpoint, config format, function logic — MUST reset its `# Status:` to `UNTESTED` until the change has been verified on a real router with a live account. This applies even to small changes like adding a flag to a curl call.
+Any change to a provider — API endpoint, config format, function logic — MUST:
+- Reset its `# Status:` to `UNTESTED` until verified on a real router with a live account. This applies even to small changes like adding a flag to a curl call.
+- Bump `SCRIPT_VERSION` in `vpnmgr.sh` — CI will reject the PR otherwise.
 
 ## Reference implementations
 
