@@ -1,9 +1,14 @@
 var $j = jQuery.noConflict();
 var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 
-var nordvpncountries = [];
-var piacountries = [];
-var wevpncountries = [];
+var vpnmgr_providers = [];
+var providerCountries = {};
+var providerTypes = {
+	'nordvpn':   ['Standard','Double','P2P'],
+	'pia':       ['Standard','Strong'],
+	'wevpn':     ['Standard'],
+	'surfshark': ['Standard']
+};
 
 var refreshcacheddatainterval;
 var getserverloadinterval;
@@ -74,29 +79,21 @@ function OptionsEnableDisable(forminput,isformload){
 }
 
 function VPNTypesToggle(forminput){
+	if(!forminput) return;
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
 	var prefix = inputname.substring(0,inputname.lastIndexOf('_'));
-	
-	switch(inputvalue){
-		case 'NordVPN':
-			$j('label[for='+prefix+'_standard],#'+prefix+'_standard').show();
-			$j('label[for='+prefix+'_double],#'+prefix+'_double').show();
-			$j('label[for='+prefix+'_p2p],#'+prefix+'_p2p').show();
-			$j('label[for='+prefix+'_strong],#'+prefix+'_strong').hide();
-			break;
-		case 'PIA':
-			$j('label[for='+prefix+'_standard],#'+prefix+'_standard').show();
-			$j('label[for='+prefix+'_double],#'+prefix+'_double').hide();
-			$j('label[for='+prefix+'_p2p],#'+prefix+'_p2p').hide();
-			$j('label[for='+prefix+'_strong],#'+prefix+'_strong').show();
-			break;
-		case 'WeVPN':
-			$j('label[for='+prefix+'_standard],#'+prefix+'_standard').show();
-			$j('label[for='+prefix+'_double],#'+prefix+'_double').hide();
-			$j('label[for='+prefix+'_p2p],#'+prefix+'_p2p').hide();
-			$j('label[for='+prefix+'_strong],#'+prefix+'_strong').hide();
-			break;
+	var pid = inputvalue.toLowerCase();
+	var types = providerTypes[pid] || ['Standard'];
+	var allTypes = ['Standard','Double','P2P','Strong'];
+	for(var i = 0; i < allTypes.length; i++){
+		var t = allTypes[i].toLowerCase();
+		if(types.indexOf(allTypes[i]) != -1){
+			$j('label[for='+prefix+'_'+t+'],#'+prefix+'_'+t).show();
+		}
+		else{
+			$j('label[for='+prefix+'_'+t+'],#'+prefix+'_'+t).hide();
+		}
 	}
 	
 	$j('#'+prefix+'_standard').prop('checked',true);
@@ -168,21 +165,12 @@ function PopulateCountryDropdown(vpnclient){
 		}
 		var dropdown = $j('#vpnmgr_vpn'+vpnno+'_countryname');
 		dropdown.empty();
-		
-		var countryarray = [];
-		
-		if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'NordVPN'){
+		var pid = eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value.toLowerCase();
+		var countryarray = providerCountries[pid] || [];
+		if(pid == 'nordvpn'){
 			dropdown.append('<option selected="true"></option>');
 			dropdown.prop('selectedIndex',0);
-			countryarray = nordvpncountries;
 		}
-		else if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'PIA'){
-			countryarray = piacountries;
-		}
-		else if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'WeVPN'){
-			countryarray = wevpncountries;
-		}
-		
 		$j.each(countryarray,function (key,entry){
 			dropdown.append($j('<option></option>').attr('value',entry.name).text(entry.name));
 		});
@@ -198,19 +186,12 @@ function PopulateCityDropdown(vpnclient){
 		}
 		var dropdown = $j('#vpnmgr_vpn'+vpnno+'_cityname');
 		dropdown.empty();
-		
-		if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'NordVPN'){
+		var pid = eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value.toLowerCase();
+		var cityarray = providerCountries[pid] || [];
+		if(pid == 'nordvpn'){
 			dropdown.append('<option selected="true"></option>');
 			dropdown.prop('selectedIndex',0);
-			cityarray = nordvpncountries;
 		}
-		else if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'PIA'){
-			cityarray = piacountries;
-		}
-		else if(eval('document.form.vpnmgr_vpn'+vpnno+'_provider').value == 'WeVPN'){
-			cityarray = wevpncountries;
-		}
-		
 		$j.each(cityarray,function (key,entry){
 			if(entry.name != eval('document.form.vpnmgr_vpn'+vpnno+'_countryname').value){
 				return true;
@@ -543,7 +524,7 @@ function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
-	GetNordVPNCountryData();
+	GetProviderList();
 	ScriptUpdateLayout();
 }
 
@@ -574,7 +555,13 @@ function BuildConfigTable(prefix,title){
 	
 	/* PROVIDER */
 	charthtml+='<tr>';
-	charthtml+='<td class="settingname"><a class="hintstyle" href="javascript:void(0);" onclick="SettingHint(2);">VPN Provider</a></td><td class="settingvalue"><input type="radio" onchange="VPNTypesToggle(this)" name="vpnmgr_'+prefix+'_provider" id="vpnmgr_'+prefix+'_prov_nordvpn" class="input" value="NordVPN" checked><label for="vpnmgr_'+prefix+'_prov_nordvpn">NordVPN</label><input type="radio" onchange="VPNTypesToggle(this)" name="vpnmgr_'+prefix+'_provider" id="vpnmgr_'+prefix+'_prov_pia" class="input" value="PIA"><label for="vpnmgr_'+prefix+'_prov_pia">PIA</label><input type="radio" onchange="VPNTypesToggle(this)" name="vpnmgr_'+prefix+'_provider" id="vpnmgr_'+prefix+'_prov_wevpn" class="input" value="WeVPN"><label for="vpnmgr_'+prefix+'_prov_wevpn">WeVPN</label></td>';
+	charthtml+='<td class="settingname"><a class="hintstyle" href="javascript:void(0);" onclick="SettingHint(2);">VPN Provider</a></td><td class="settingvalue">';
+	for(var pi = 0; pi < vpnmgr_providers.length; pi++){
+		var pid = vpnmgr_providers[pi].id;
+		var pname = vpnmgr_providers[pi].name;
+		charthtml+='<input type="radio" onchange="VPNTypesToggle(this)" name="vpnmgr_'+prefix+'_provider" id="vpnmgr_'+prefix+'_prov_'+pid+'" class="input" value="'+pname+'"'+(pi === 0 ? ' checked' : '')+'><label for="vpnmgr_'+prefix+'_prov_'+pid+'">'+pname+'</label>';
+	}
+	charthtml+='</td>';
 	charthtml+='</tr>';
 	
 	/* USERNAME ENABLED */
@@ -708,29 +695,28 @@ $j.fn.serializeObject = function(){
 		}
 		o['vpnmgr_vpn'+i+'_schdays'] = schdaysstring;
 		
-		if($j('select[name="vpnmgr_vpn'+i+'_countryname"]').val() == '' || $j('input[name="vpnmgr_vpn'+i+'_provider"]:checked').val() == 'PIA'){
-			o['vpnmgr_vpn'+i+'_countryid'] = 0;
-			o['vpnmgr_vpn'+i+'_cityid'] = 0;
-		}
-		else if($j('select[name="vpnmgr_vpn'+i+'_countryname"]').val() == '' || $j('input[name="vpnmgr_vpn'+i+'_provider"]:checked').val() == 'WeVPN'){
-			o['vpnmgr_vpn'+i+'_countryid'] = 0;
-			o['vpnmgr_vpn'+i+'_cityid'] = 0;
-		}
-		else{
-			o['vpnmgr_vpn'+i+'_countryid'] = nordvpncountries.filter(function(item){
+		var selectedprovider = $j('input[name="vpnmgr_vpn'+i+'_provider"]:checked').val();
+		var selectedpid = selectedprovider ? selectedprovider.toLowerCase() : '';
+		if(selectedpid == 'nordvpn' && $j('select[name="vpnmgr_vpn'+i+'_countryname"]').val() != ''){
+			var nordcountries = providerCountries['nordvpn'] || [];
+			o['vpnmgr_vpn'+i+'_countryid'] = nordcountries.filter(function(item){
 				return item.name == $j('select[name="vpnmgr_vpn'+i+'_countryname"]').val();
-			}).map(function(d){return d.id})[0];
-			
+			}).map(function(d){return d.id})[0] || 0;
 			if($j('select[name="vpnmgr_vpn'+i+'_cityname"]').val() == ''){
 				o['vpnmgr_vpn'+i+'_cityid'] = 0;
 			}
 			else{
-				o['vpnmgr_vpn'+i+'_cityid'] = nordvpncountries.filter(function(item){
+				var nordcity = nordcountries.filter(function(item){
 					return item.name == $j('select[name="vpnmgr_vpn'+i+'_countryname"]').val();
-				})[0].cities.filter(function(item){
+				})[0];
+				o['vpnmgr_vpn'+i+'_cityid'] = nordcity ? nordcity.cities.filter(function(item){
 					return item.name == $j('select[name="vpnmgr_vpn'+i+'_cityname"]').val();
-				}).map(function(d){return d.id})[0];
+				}).map(function(d){return d.id})[0] || 0 : 0;
 			}
+		}
+		else{
+			o['vpnmgr_vpn'+i+'_countryid'] = 0;
+			o['vpnmgr_vpn'+i+'_cityid'] = 0;
 		}
 	}
 	return o;
@@ -889,7 +875,9 @@ function PostRefreshCachedData(){
 		$j('#table_config_vpn'+vpnno).prev('div').remove();
 		$j('#table_config_vpn'+vpnno).remove();
 	}
-	setTimeout(GetNordVPNCountryData,3000);
+	vpnmgr_providers = [];
+	providerCountries = {};
+	setTimeout(GetProviderList,3000);
 }
 
 function GetVersionNumber(versiontype){
@@ -909,44 +897,39 @@ function GetVersionNumber(versiontype){
 	}
 }
 
-function GetNordVPNCountryData(){
+function GetProviderList(){
 	$j.ajax({
-		url: '/ext/vpnmgr/nordvpn_countrydata.htm',
-		dataType: 'json',
-		error: function(xhr){
-			setTimeout(GetNordVPNCountryData,1000);
-		},
-		success: function(data){
-			nordvpncountries = data;
-			GetPIACountryData();
-		}
-	});
-}
-
-function GetPIACountryData(){
-	$j.ajax({
-		url: '/ext/vpnmgr/pia_countrydata.htm',
+		url: '/ext/vpnmgr/providers.htm',
 		dataType: 'text',
-		error: function(xhr){
-			setTimeout(GetPIACountryData,1000);
-		},
-		success: function(data){
-			piacountries = parseCountryData(data);
-			GetWeVPNCountryData();
-		}
-	});
-}
-
-function GetWeVPNCountryData(){
-	$j.ajax({
-		url: '/ext/vpnmgr/wevpn_countrydata.htm',
-		dataType: 'text',
-		error: function(xhr){
-			setTimeout(GetWeVPNCountryData,1000);
-		},
-		success: function(data){
-			wevpncountries = parseCountryData(data);
+		error: function(){
 			get_conf_file();
+		},
+		success: function(data){
+			var lines = data.split('\n');
+			for(var i = 0; i < lines.length; i++){
+				if(!lines[i]) continue;
+				var parts = lines[i].split('|');
+				if(parts.length >= 2){
+					vpnmgr_providers.push({id: parts[0], name: parts[1]});
+				}
+			}
+			LoadProviderCountryData(0);
+		}
+	});
+}
+
+function LoadProviderCountryData(idx){
+	if(idx >= vpnmgr_providers.length){ get_conf_file(); return; }
+	var p = vpnmgr_providers[idx];
+	$j.ajax({
+		url: '/ext/vpnmgr/' + p.id + '_countrydata.htm',
+		dataType: p.id === 'nordvpn' ? 'json' : 'text',
+		error: function(){
+			LoadProviderCountryData(idx + 1);
+		},
+		success: function(data){
+			providerCountries[p.id] = (p.id === 'nordvpn') ? data : parseCountryData(data);
+			LoadProviderCountryData(idx + 1);
 		}
 	});
 }
@@ -1313,21 +1296,16 @@ function setCitiesforCountry(forminput){
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
 	var prefix = inputname.substring(0,inputname.lastIndexOf('_'));
-	
+
 	var dropdown = $j('select[name='+prefix+'_cityname]');
 	dropdown.empty();
-	
-	if(eval('document.form.'+prefix+'_provider').value == 'NordVPN'){
+
+	var pid = eval('document.form.'+prefix+'_provider').value.toLowerCase();
+	var cityarray = providerCountries[pid] || [];
+	if(pid == 'nordvpn'){
 		dropdown.append('<option selected="true"></option>');
-		cityarray = nordvpncountries;
 	}
-	else if(eval('document.form.'+prefix+'_provider').value == 'PIA'){
-		cityarray = piacountries;
-	}
-	else if(eval('document.form.'+prefix+'_provider').value == 'WeVPN'){
-		cityarray = wevpncountries;
-	}
-	
+
 	$j.each(cityarray,function (key,entry){
 		if(entry.name != $j('select[name='+prefix+'_countryname]').val()){
 			return true;
