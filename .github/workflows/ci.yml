@@ -18,3 +18,38 @@ jobs:
 
       - name: Run smoke tests
         run: bash scripts/smoke-test.sh
+
+  version-bump:
+    name: Version bump check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require SCRIPT_VERSION bump when script files change
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          changed=$(git diff --name-only "$base_sha" HEAD | grep -E '^(vpnmgr\.sh|providers/provider_.+\.sh)$' || true)
+
+          if [ -z "$changed" ]; then
+            echo "No script files changed — version check skipped."
+            exit 0
+          fi
+
+          echo "Changed script files:"
+          echo "$changed"
+
+          base_ver=$(git show "${base_sha}:vpnmgr.sh" | grep -m1 'SCRIPT_VERSION=' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+          head_ver=$(grep -m1 'SCRIPT_VERSION=' vpnmgr.sh | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+
+          echo "Base version : $base_ver"
+          echo "Branch version: $head_ver"
+
+          if [ "$base_ver" = "$head_ver" ]; then
+            echo "ERROR: script files changed but SCRIPT_VERSION was not bumped in vpnmgr.sh"
+            exit 1
+          fi
+
+          echo "OK: $base_ver -> $head_ver"

@@ -105,6 +105,8 @@ All `.sh` files must be **busybox ash compatible**. No bash arrays, no `[[ ]]`, 
 
 - **NordVPN OVPN format**: vpnmgr downloads OVPN files from NordVPN's CDN, which still serves the v1 format (tls-auth, multiple `remote` lines). NordVPN's newer v2.6 format (tls-crypt, single `remote`) is only available via manual download from the NordVPN portal — no programmatic per-server URL is known. The v1 CDN files work correctly; upgrading to v2.6 would require NordVPN to expose an API endpoint for per-server downloads.
 
+- **Migrating from jackyaz's version**: if you currently have [jackyaz/vpnmgr](https://github.com/jackyaz/vpnmgr) installed, you must uninstall it first before installing this version. Run `vpnmgr uninstall` using the old script, then follow the installation instructions above. The install command will detect an existing installation and refuse to proceed if one is found.
+
 ## Roadmap
 
 - [x] **Phase 1** — Fork merge: jackyaz's v2.3.2 merged as the new baseline; WeVPN ZIP files removed
@@ -113,6 +115,7 @@ All `.sh` files must be **busybox ash compatible**. No bash arrays, no `[[ ]]`, 
 - [x] **Phase 4** — Web assets: `jquery.js` and `detect.js` bundled in `www/`; `jackyaz/shared-jy` dependency removed
 - [x] **Phase 5** — WebUI modernisation: dynamic provider loading from `providers.htm`; ES5-clean JS; inline script blob replaced with external `vpnmgr_www.js`
 - [ ] **Phase 6** — Documentation: provider authoring guide, contributing guide, CLI/WebUI screenshots
+- [ ] **Phase 7** — Migration: automated detection of jackyaz's install with guided uninstall prompt
 
 ## Project history
 
